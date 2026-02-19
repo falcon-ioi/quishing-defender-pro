@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# IDE
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel
+*.log
+/quishing-laravel/public/build
+/quishing-laravel/public/hot
+/quishing-laravel/public/storage
+/quishing-laravel/storage/*.key
+/quishing-laravel/storage/pail
+/quishing-laravel/.phpunit.cache
+/quishing-laravel/.phpunit.result.cache
+/quishing-laravel/auth.json
+
+# Database
+*.sqlite
+*.sqlite-journal
+
+# Legacy
+/_legacy/node_modules/

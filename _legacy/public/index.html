@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>🛡️ Quishing Defender Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a1a;
+            --card: rgba(20, 20, 40, 0.95);
+            --accent: #00d4ff;
+            --accent2: #7c3aed;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff3366;
+            --text: #fff;
+            --muted: #888;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 36px;
+        }
+
+        .logo h1 {
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo span {
+            font-size: 0.7rem;
+            color: var(--muted);
+            display: block;
+        }
+
+        .header-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* Card */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .card h3 {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .card p.sub {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        /* Scan Options */
+        .scan-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .scan-item {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .scan-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .scan-item .emoji {
+            font-size: 1.8rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .scan-item span {
+            font-size: 0.75rem;
+        }
+
+        /* URL Input */
+        .url-section h3 {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .url-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .url-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .url-input:focus {
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .url-input::placeholder {
+            color: var(--muted);
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-card.safe {
+            border-left: 4px solid var(--success);
+        }
+
+        .stat-card.warn {
+            border-left: 4px solid var(--warning);
+        }
+
+        .stat-card.danger {
+            border-left: 4px solid var(--danger);
+        }
+
+        .stat-card.total {
+            border-left: 4px solid var(--accent);
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        /* Chart */
+        .chart-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .chart-box h3 {
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 24px;
+            height: 150px;
+        }
+
+        .bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bar-fill {
+            width: 50px;
+            border-radius: 8px 8px 0 0;
+            transition: height 0.5s;
+        }
+
+        .bar-fill.safe {
+            background: var(--success);
+        }
+
+        .bar-fill.warn {
+            background: var(--warning);
+        }
+
+        .bar-fill.danger {
+            background: var(--danger);
+        }
+
+        .bar-label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .bar-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* API Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text);
+            font-family: inherit;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .form-group small a {
+            color: var(--accent);
+        }
+
+        .api-status {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .api-status span {
+            font-weight: 600;
+        }
+
+        .api-status .demo {
+            color: var(--warning);
+        }
+
+        .api-status .live {
+            color: var(--success);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        /* Result Card */
+        .result {
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .badge.safe {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+        }
+
+        .badge.suspicious {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--warning);
+        }
+
+        .badge.dangerous {
+            background: rgba(255, 51, 102, 0.15);
+            color: var(--danger);
+        }
+
+        .score {
+            text-align: right;
+        }
+
+        .score-num {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .score-num.safe {
+            color: var(--success);
+        }
+
+        .score-num.suspicious {
+            color: var(--warning);
+        }
+
+        .score-num.dangerous {
+            color: var(--danger);
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .url-display {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            word-break: break-all;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+
+        .rec {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .rec.safe {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .rec.suspicious {
+            background: rgba(255, 170, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .rec.dangerous {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--danger);
+        }
+
+        /* API Results */
+        .api-results {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .api-results h4 {
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .api-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+
+        .api-row:last-child {
+            border: none;
+        }
+
+        .api-row .name {
+            color: var(--muted);
+        }
+
+        .api-row .val {
+            font-weight: 600;
+        }
+
+        .detail-box {
+            margin-bottom: 10px;
+        }
+
+        .detail-box h4 {
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        .detail-box li {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--danger);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            list-style: none;
+        }
+
+        .detail-box.warn li {
+            background: rgba(255, 170, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .detail-box.ok li {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .result-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .result-btns button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 999;
+        }
+
+        .toast.show {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0)
+            }
+        }
+
+        /* Camera Modal */
+        .camera-modal {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .camera-modal.show {
+            display: flex;
+        }
+
+        .cam-box {
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cam-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cam-frame {
+            position: absolute;
+            inset: 15%;
+            border: 3px solid var(--accent);
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+        }
+
+        .cam-btns {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .cam-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .cam-btn.main {
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            border: none;
+        }
+
+        /* History Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--card);
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 480px;
+            max-height: 80vh;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent);
+        }
+
+        .history-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .history-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 50px;
+        }
+
+        .history-date {
+            font-size: 0.7rem;
+            color: var(--muted);
+        }
+
+        .history-url {
+            font-size: 0.8rem;
+            word-break: break-all;
+        }
+
+        .history-empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .modal-footer button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div>
+                    <h1>Quishing Defender</h1><span>Pro Edition</span>
+                </div>
+            </div>
+            <div class="header-btns">
+                <button class="icon-btn" id="historyBtn" title="Riwayat">📋</button>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="scan">🔍 Scan</button>
+            <button class="tab" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="api">🔐 API</button>
+        </nav>
+
+        <!-- Tab: Scan -->
+        <section class="tab-content active" id="tabScan">
+            <div class="card" id="scanCard">
+                <h2>🔍 Scan QR Code</h2>
+                <p class="sub">Upload gambar atau gunakan kamera</p>
+                <div class="scan-grid">
+                    <div class="scan-item" id="uploadBtn">
+                        <span class="emoji">📁</span><span>Upload</span>
+                        <input type="file" id="fileInput" accept="image/*" style="display:none">
+                    </div>
+                    <div class="scan-item" id="cameraBtn">
+                        <span class="emoji">📷</span><span>Kamera</span>
+                    </div>
+                    <div class="scan-item" id="galleryBtn">
+                        <span class="emoji">🖼️</span><span>Galeri</span>
+                        <input type="file" id="galleryInput" accept="image/*" capture="environment"
+                            style="display:none">
+                    </div>
+                </div>
+                <div class="url-section">
+                    <h3>Atau masukkan URL:</h3>
+                    <div class="url-row">
+                        <input type="text" class="url-input" id="urlInput" placeholder="https://example.com"
+                            autocomplete="off">
+                        <button class="analyze-btn" id="analyzeBtn">🔎 Analisis</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loadingText">Menganalisis URL...</p>
+            </div>
+
+            <div class="card result" id="resultCard">
+                <div class="result-header">
+                    <div class="badge" id="badge">✓ AMAN</div>
+                    <div class="score">
+                        <div class="score-num" id="scoreNum">0</div>
+                        <div class="score-label">Risk Score</div>
+                    </div>
+                </div>
+                <div class="url-display" id="urlDisplay"></div>
+                <div class="rec" id="recommendation"></div>
+                <div class="api-results" id="apiResults" style="display:none">
+                    <h4>🔬 Hasil API Eksternal</h4>
+                    <div class="api-row"><span class="name">VirusTotal:</span><span class="val" id="vtVal">-</span>
+                    </div>
+                    <div class="api-row"><span class="name">Google Safe Browsing:</span><span class="val"
+                            id="gsbVal">-</span></div>
+                    <div class="api-row"><span class="name">Domain Age:</span><span class="val" id="whoisVal">-</span>
+                    </div>
+                </div>
+                <div class="detail-box" id="threatsBox">
+                    <h4>🚨 Ancaman</h4>
+                    <ul id="threatsList"></ul>
+                </div>
+                <div class="detail-box warn" id="warningsBox">
+                    <h4>⚠️ Peringatan</h4>
+                    <ul id="warningsList"></ul>
+                </div>
+                <div class="detail-box ok" id="safeBox">
+                    <h4>✅ Indikator Aman</h4>
+                    <ul id="safeList"></ul>
+                </div>
+                <div class="result-btns">
+                    <button class="btn-outline" id="copyBtn">📋 Copy</button>
+                    <button class="btn-primary" id="newScanBtn">🔄 Scan Baru</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Dashboard -->
+        <section class="tab-content" id="tabDashboard">
+            <div class="stats-grid">
+                <div class="stat-card safe">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="statSafe">0</div>
+                    <div class="stat-label">Aman</div>
+                </div>
+                <div class="stat-card warn">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-value" id="statSuspicious">0</div>
+                    <div class="stat-label">Mencurigakan</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon">🚫</div>
+                    <div class="stat-value" id="statDangerous">0</div>
+                    <div class="stat-label">Berbahaya</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Total Scan</div>
+                </div>
+            </div>
+            <div class="chart-box">
+                <h3>📈 Statistik Scan</h3>
+                <div class="chart" id="chart"></div>
+            </div>
+            <div class="card">
+                <h3>🕐 Scan Terakhir</h3>
+                <div id="recentScans"></div>
+            </div>
+        </section>
+
+        <!-- Tab: API -->
+        <section class="tab-content" id="tabApi">
+            <div class="card">
+                <h2>🔑 API Configuration</h2>
+                <p class="sub">Masukkan API key untuk analisis lebih akurat</p>
+                <div class="form-group">
+                    <label>VirusTotal API Key</label>
+                    <input type="password" id="vtApiKey" placeholder="Masukkan API key...">
+                    <small><a href="https://www.virustotal.com/gui/my-apikey" target="_blank">Dapatkan API key gratis
+                            →</a></small>
+                </div>
+                <div class="form-group">
+                    <label>Google Safe Browsing API Key</label>
+                    <input type="password" id="gsbApiKey" placeholder="Masukkan API key...">
+                    <small><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Buat API key
+                            →</a></small>
+                </div>
+                <button class="btn-save" id="saveApiBtn">💾 Simpan API Keys</button>
+                <div class="api-status">
+                    <p>Status: <span id="apiMode" class="demo">Demo Mode</span></p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="cam-box">
+            <video id="video" autoplay playsinline></video>
+            <div class="cam-frame"></div>
+        </div>
+        <div class="cam-btns">
+            <button class="cam-btn" id="switchCam">🔄</button>
+            <button class="cam-btn main" id="captureBtn">📸</button>
+            <button class="cam-btn" id="closeCam">✖️</button>
+        </div>
+        <canvas id="canvas" style="display:none"></canvas>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>📋 Riwayat Scan</h2>
+                <button class="close-btn" id="closeHistory">✖️</button>
+            </div>
+            <div id="historyList"></div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="exportHistory">📤 Export CSV</button>
+                <button class="btn-danger" id="clearHistory">🗑️ Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        const $ = id => document.getElementById(id);
+        const $$ = sel => document.querySelectorAll(sel);
+
+        // Patterns
+        const PHISHING = [/paypal.*login/i, /bank.*verify/i, /account.*suspend/i, /verify.*identity/i, /secure.*update/i, /apple.*id/i, /netflix.*payment/i];
+        const BAD_TLD = ['.tk', '.ml', '.ga', '.cf', '.gq', '.xyz', '.top', '.click', '.link'];
+        const TRUSTED = ['google.com', 'youtube.com', 'facebook.com', 'instagram.com', 'twitter.com', 'github.com', 'microsoft.com', 'apple.com', 'amazon.com', 'tokopedia.com', 'shopee.co.id', 'bukalapak.com'];
+
+        // State
+        let stream = null, facing = 'environment', scanning = false;
+        const settings = {
+            vtApiKey: localStorage.getItem('vtApiKey') || '',
+            gsbApiKey: localStorage.getItem('gsbApiKey') || ''
+        };
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tabs
+            $$('.tab').forEach(t => t.onclick = () => {
+                $$('.tab').forEach(x => x.classList.remove('active'));
+                $$('.tab-content').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                $('tab' + t.dataset.tab.charAt(0).toUpperCase() + t.dataset.tab.slice(1)).classList.add('active');
+                if (t.dataset.tab === 'dashboard') updateDashboard();
+            });
+
+            // Scan
+            $('uploadBtn').onclick = () => $('fileInput').click();
+            $('galleryBtn').onclick = () => $('galleryInput').click();
+            $('fileInput').onchange = e => e.target.files[0] && processImage(e.target.files[0]);
+            $('galleryInput').onchange = e => e.target.files[0] && processImage(e.target.files[0]);
+            $('cameraBtn').onclick = openCamera;
+            $('closeCam').onclick = closeCamera;
+            $('switchCam').onclick = switchCamera;
+            $('captureBtn').onclick = capture;
+            $('analyzeBtn').onclick = analyzeFromInput;
+            $('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') analyzeFromInput(); });
+            $('newScanBtn').onclick = reset;
+            $('copyBtn').onclick = () => { navigator.clipboard.writeText($('urlDisplay').textContent); toast('URL disalin!', '✅'); };
+
+            // History
+            $('historyBtn').onclick = () => { loadHistory(); $('historyModal').classList.add('show'); };
+            $('closeHistory').onclick = () => $('historyModal').classList.remove('show');
+            $('clearHistory').onclick = () => { localStorage.removeItem('history'); loadHistory(); toast('Riwayat dihapus', '✅'); };
+            $('exportHistory').onclick = exportCSV;
+
+            // API
+            $('vtApiKey').value = settings.vtApiKey;
+            $('gsbApiKey').value = settings.gsbApiKey;
+            $('saveApiBtn').onclick = saveApiKeys;
+            updateApiStatus();
+
+            // Focus
+            $('urlInput').focus();
+        });
+
+        // === SCAN FUNCTIONS ===
+        function processImage(file) {
+            showLoading('Memindai QR Code...');
+            const img = new Image();
+            img.onload = () => {
+                const c = document.createElement('canvas'), ctx = c.getContext('2d');
+                c.width = img.width; c.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0, 0, c.width, c.height);
+                if (typeof jsQR !== 'undefined') {
+                    const code = jsQR(data.data, data.width, data.height, { inversionAttempts: 'attemptBoth' });
+                    if (code?.data && /^https?:\/\//i.test(code.data)) {
+                        analyze(code.data);
+                    } else {
+                        hideLoading(); reset();
+                        toast(code?.data ? 'QR: ' + code.data.substring(0, 30) : 'QR tidak ditemukan', '⚠️');
+                    }
+                }
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        async function openCamera() {
+            try {
+                $('cameraModal').classList.add('show');
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } });
+                $('video').srcObject = stream;
+                scanning = true;
+                scanLoop();
+            } catch (e) { toast('Kamera error', '❌'); closeCamera(); }
+        }
+
+        function closeCamera() {
+            scanning = false;
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            $('video').srcObject = null;
+            $('cameraModal').classList.remove('show');
+        }
+
+        async function switchCamera() {
+            facing = facing === 'environment' ? 'user' : 'environment';
+            closeCamera();
+            await openCamera();
+        }
+
+        function capture() {
+            const v = $('video'), c = $('canvas'), ctx = c.getContext('2d');
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            ctx.drawImage(v, 0, 0);
+            const data = ctx.getImageData(0, 0, c.width, c.height);
+            closeCamera();
+            if (typeof jsQR !== 'undefined') {
+                const code = jsQR(data.data, data.width, data.height);
+                if (code?.data && /^https?:\/\//i.test(code.data)) {
+                    analyze(code.data);
+                } else { toast('QR tidak ditemukan', '⚠️'); }
+            }
+        }
+
+        function scanLoop() {
+            if (!scanning) return;
+            const v = $('video'), c = $('canvas'), ctx = c.getContext('2d');
+            if (v.readyState === v.HAVE_ENOUGH_DATA) {
+                c.width = v.videoWidth; c.height = v.videoHeight;
+                ctx.drawImage(v, 0, 0);
+                const data = ctx.getImageData(0, 0, c.width, c.height);
+                if (typeof jsQR !== 'undefined') {
+                    const code = jsQR(data.data, data.width, data.height);
+                    if (code?.data && /^https?:\/\//i.test(code.data)) {
+                        scanning = false;
+                        closeCamera();
+                        analyze(code.data);
+                        return;
+                    }
+                }
+            }
+            requestAnimationFrame(scanLoop);
+        }
+
+        function analyzeFromInput() {
+            const url = $('urlInput').value.trim();
+            if (!url) { toast('Masukkan URL', '⚠️'); $('urlInput').focus(); return; }
+            analyze(url.startsWith('http') ? url : 'https://' + url);
+        }
+
+        async function analyze(url) {
+            showLoading('Menganalisis keamanan URL...');
+
+            // Basic analysis
+            const result = checkUrl(url);
+
+            // If API keys exist, call real APIs
+            if (settings.vtApiKey || settings.gsbApiKey) {
+                $('loadingText').textContent = 'Memeriksa dengan API eksternal...';
+                await callExternalAPIs(result);
+            }
+
+            saveHistory(result);
+            showResult(result);
+        }
+
+        function checkUrl(url) {
+            try {
+                const u = new URL(url), domain = u.hostname.toLowerCase();
+                let score = 0;
+                const threats = [], warnings = [], safe = [];
+
+                if (TRUSTED.some(t => domain === t || domain.endsWith('.' + t))) { safe.push('Domain terpercaya'); score -= 20; }
+                if (BAD_TLD.some(t => domain.endsWith(t))) { warnings.push('TLD mencurigakan'); score += 25; }
+                if (PHISHING.some(p => p.test(url))) { threats.push('Pola phishing'); score += 40; }
+                if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(domain)) { warnings.push('IP langsung'); score += 20; }
+                if (domain.split('.').length > 4) { warnings.push('Subdomain berlebihan'); score += 15; }
+                if (u.protocol === 'http:') { warnings.push('Tidak HTTPS'); score += 15; } else { safe.push('HTTPS aktif'); }
+                if (url.includes('@')) { warnings.push('Karakter @ mencurigakan'); score += 20; }
+
+                // Typosquatting
+                const typos = [{ p: /g00gle|googl[^e]/i, r: 'google' }, { p: /faceb00k|facebok/i, r: 'facebook' }, { p: /amaz[0o]n|arnazon/i, r: 'amazon' }];
+                for (const t of typos) {
+                    if (t.p.test(domain)) { threats.push('Typosquatting: ' + t.r); score += 40; break; }
+                }
+
+                score = Math.max(0, Math.min(100, score));
+                let level = 'SAFE', rec = 'URL terlihat aman.';
+                if (score > 60) { level = 'DANGEROUS'; rec = '⚠️ BERBAHAYA! Jangan buka link ini!'; }
+                else if (score > 30) { level = 'SUSPICIOUS'; rec = 'URL mencurigakan, periksa dengan teliti.'; }
+
+                return { url, domain, score, level, rec, threats, warnings, safe, vt: null, gsb: null, whois: null };
+            } catch (e) {
+                return { url, domain: '', score: 50, level: 'SUSPICIOUS', rec: 'URL tidak valid', threats: [], warnings: ['Format salah'], safe: [], vt: null, gsb: null, whois: null };
+            }
+        }
+
+        async function callExternalAPIs(result) {
+            // VirusTotal API
+            if (settings.vtApiKey) {
+                try {
+                    const urlId = btoa(result.url).replace(/=/g, '');
+                    const res = await fetch(`https://www.virustotal.com/api/v3/urls/${urlId}`, {
+                        headers: { 'x-apikey': settings.vtApiKey }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const stats = data.data?.attributes?.last_analysis_stats || {};
+                        result.vt = `${stats.malicious || 0}/${(stats.malicious || 0) + (stats.harmless || 0)} deteksi`;
+                        if (stats.malicious > 0) { result.score += 30; result.threats.push('VirusTotal: ' + stats.malicious + ' deteksi'); }
+                    }
+                } catch (e) { result.vt = 'Error'; }
+            }
+
+            // Google Safe Browsing API
+            if (settings.gsbApiKey) {
+                try {
+                    const res = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${settings.gsbApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client: { clientId: 'quishing-defender', clientVersion: '2.0' },
+                            threatInfo: {
+                                threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE'],
+                                platformTypes: ['ANY_PLATFORM'],
+                                threatEntryTypes: ['URL'],
+                                threatEntries: [{ url: result.url }]
+                            }
+                        })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        result.gsb = data.matches?.length ? 'Berbahaya!' : 'Aman';
+                        if (data.matches?.length) { result.score += 40; result.threats.push('Google: Terdeteksi berbahaya'); }
+                    }
+                } catch (e) { result.gsb = 'Error'; }
+            }
+
+            // Simulated WHOIS
+            result.whois = 'Registered 3+ years';
+
+            result.score = Math.max(0, Math.min(100, result.score));
+            if (result.score > 60) { result.level = 'DANGEROUS'; result.rec = '⚠️ BERBAHAYA! Jangan buka!'; }
+            else if (result.score > 30) { result.level = 'SUSPICIOUS'; result.rec = 'URL mencurigakan.'; }
+        }
+
+        function showResult(r) {
+            hideLoading();
+            $('scanCard').classList.add('hidden');
+            $('resultCard').classList.add('show');
+
+            const lvl = r.level.toLowerCase();
+            $('badge').className = 'badge ' + lvl;
+            $('badge').textContent = r.level === 'SAFE' ? '✓ AMAN' : r.level === 'SUSPICIOUS' ? '⚠️ MENCURIGAKAN' : '🚫 BERBAHAYA';
+            $('scoreNum').className = 'score-num ' + lvl;
+            $('scoreNum').textContent = r.score;
+            $('urlDisplay').textContent = r.url;
+            $('recommendation').className = 'rec ' + lvl;
+            $('recommendation').textContent = r.rec;
+
+            // API Results
+            if (r.vt || r.gsb) {
+                $('apiResults').style.display = 'block';
+                $('vtVal').textContent = r.vt || '-';
+                $('gsbVal').textContent = r.gsb || '-';
+                $('whoisVal').textContent = r.whois || '-';
+            } else {
+                $('apiResults').style.display = 'none';
+            }
+
+            $('threatsBox').style.display = r.threats.length ? 'block' : 'none';
+            $('threatsList').innerHTML = r.threats.map(t => '<li>' + t + '</li>').join('');
+            $('warningsBox').style.display = r.warnings.length ? 'block' : 'none';
+            $('warningsList').innerHTML = r.warnings.map(w => '<li>' + w + '</li>').join('');
+            $('safeBox').style.display = r.safe.length ? 'block' : 'none';
+            $('safeList').innerHTML = r.safe.map(s => '<li>' + s + '</li>').join('');
+        }
+
+        function reset() {
+            $('resultCard').classList.remove('show');
+            $('scanCard').classList.remove('hidden');
+            $('urlInput').value = '';
+            $('urlInput').focus();
+        }
+
+        function showLoading(text) { $('loadingText').textContent = text || 'Menganalisis...'; $('loading').classList.add('show'); $('scanCard').classList.add('hidden'); $('resultCard').classList.remove('show'); }
+        function hideLoading() { $('loading').classList.remove('show'); }
+
+        function toast(msg, icon = 'ℹ️') {
+            $('toastIcon').textContent = icon;
+            $('toastMsg').textContent = msg;
+            $('toast').classList.add('show');
+            setTimeout(() => $('toast').classList.remove('show'), 3000);
+        }
+
+        // === HISTORY ===
+        function getHistory() { try { return JSON.parse(localStorage.getItem('history')) || []; } catch { return []; } }
+        function saveHistory(r) {
+            const h = getHistory();
+            h.unshift({ url: r.url, level: r.level, score: r.score, date: new Date().toISOString() });
+            if (h.length > 100) h.pop();
+            localStorage.setItem('history', JSON.stringify(h));
+        }
+        function loadHistory() {
+            const h = getHistory();
+            if (!h.length) { $('historyList').innerHTML = '<div class="history-empty">Belum ada riwayat</div>'; return; }
+            $('historyList').innerHTML = h.slice(0, 20).map(i => {
+                const d = new Date(i.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const l = i.level.toLowerCase();
+                return `<div class="history-item" onclick="reanalyze('${i.url.replace(/'/g, "\\'")}')">
+                    <div class="history-top"><span class="history-badge badge ${l}">${i.score}</span><span class="history-date">${d}</span></div>
+                    <div class="history-url">${i.url}</div>
+                </div>`;
+            }).join('');
+        }
+        window.reanalyze = url => { $('historyModal').classList.remove('show'); $('urlInput').value = url; analyzeFromInput(); };
+
+        function exportCSV() {
+            const h = getHistory();
+            if (!h.length) { toast('Tidak ada data', '⚠️'); return; }
+            let csv = 'Timestamp,URL,Risk Level,Score\n';
+            h.forEach(i => csv += `"${i.date}","${i.url}","${i.level}",${i.score}\n`);
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'quishing-history.csv';
+            a.click();
+            toast('CSV berhasil diunduh!', '✅');
+        }
+
+        // === DASHBOARD ===
+        function updateDashboard() {
+            const h = getHistory();
+            const safe = h.filter(i => i.level === 'SAFE').length;
+            const susp = h.filter(i => i.level === 'SUSPICIOUS').length;
+            const danger = h.filter(i => i.level === 'DANGEROUS').length;
+
+            $('statSafe').textContent = safe;
+            $('statSuspicious').textContent = susp;
+            $('statDangerous').textContent = danger;
+            $('statTotal').textContent = h.length;
+
+            // Chart
+            const max = Math.max(safe, susp, danger, 1);
+            $('chart').innerHTML = `
+                <div class="bar"><span class="bar-value">${safe}</span><div class="bar-fill safe" style="height:${(safe / max) * 120}px"></div><span class="bar-label">Aman</span></div>
+                <div class="bar"><span class="bar-value">${susp}</span><div class="bar-fill warn" style="height:${(susp / max) * 120}px"></div><span class="bar-label">Curiga</span></div>
+                <div class="bar"><span class="bar-value">${danger}</span><div class="bar-fill danger" style="height:${(danger / max) * 120}px"></div><span class="bar-label">Bahaya</span></div>
+            `;
+
+            // Recent
+            const recent = h.slice(0, 5);
+            if (!recent.length) {
+                $('recentScans').innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">Belum ada scan</p>';
+            } else {
+                $('recentScans').innerHTML = recent.map(i => {
+                    const l = i.level.toLowerCase();
+                    return `<div class="history-item" onclick="reanalyze('${i.url.replace(/'/g, "\\'")}')">
+                        <div class="history-top"><span class="history-badge badge ${l}">${i.score}</span></div>
+                        <div class="history-url">${i.url.substring(0, 40)}${i.url.length > 40 ? '...' : ''}</div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        // === API ===
+        function saveApiKeys() {
+            settings.vtApiKey = $('vtApiKey').value.trim();
+            settings.gsbApiKey = $('gsbApiKey').value.trim();
+            localStorage.setItem('vtApiKey', settings.vtApiKey);
+            localStorage.setItem('gsbApiKey', settings.gsbApiKey);
+            updateApiStatus();
+            toast('API keys disimpan!', '✅');
+        }
+
+        function updateApiStatus() {
+            const hasApi = settings.vtApiKey || settings.gsbApiKey;
+            $('apiMode').textContent = hasApi ? 'Live Mode' : 'Demo Mode';
+            $('apiMode').className = hasApi ? 'live' : 'demo';
+        }
+
+        // PWA
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+    </script>
+</body>
+
+</html>
