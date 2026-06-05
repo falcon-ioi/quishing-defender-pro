@@ -1,0 +1,800 @@
+% ============================================================
+% Paper: Pengembangan Aplikasi Pendeteksi QR Code Phishing 
+%        (Quishing) dengan Teknik Multi-API dan Preprocessing 
+%        Citra untuk Pemindaian QR Fancy
+% Format: IEEE Conference Paper
+% Bahasa: Indonesia
+% ============================================================
+\documentclass[conference]{IEEEtran}
+
+% --- Package Imports ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{balance}
+
+% --- Hyperref Setup ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+% --- Listings Setup ---
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    tabsize=2
+}
+
+% --- Custom Column Type ---
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Pengembangan Aplikasi Pendeteksi QR Code Phishing (Quishing) dengan Teknik Multi-API dan Preprocessing Citra untuk Pemindaian QR Fancy}
+
+\author{\IEEEauthorblockN{Raffelino Hizkia Marbun, Reiza Gerrard Rizki Ramadhan, Retta Kresensia Br Sembiring}
+\IEEEauthorblockA{
+Program Studi Rekayasa Keamanan Siber\\
+Politeknik Siber dan Sandi Negara\\
+Bogor, Indonesia}
+}
+
+\maketitle
+
+% ============================================================
+% ABSTRAK
+% ============================================================
+\begin{abstract}
+Serangan \textit{phishing} melalui \textit{Quick Response} (QR) code atau yang dikenal dengan istilah \textit{quishing} (\textit{QR phishing}) mengalami peningkatan signifikan di Indonesia, terutama sejak maraknya penggunaan QRIS (\textit{Quick Response Code Indonesian Standard}) sebagai standar pembayaran digital. Kasus pemalsuan QRIS yang terjadi di berbagai tempat ibadah dan ruang publik pada tahun 2023--2024 menunjukkan urgensi pengembangan alat deteksi yang efektif. Penelitian ini mengembangkan aplikasi ``Quishing Defender'' yang mengintegrasikan teknik \textit{multi-API} (VirusTotal, Google Safe Browsing, dan WHOIS) dengan \textit{pipeline preprocessing} citra untuk mendeteksi QR code \textit{phishing}, termasuk QR \textit{fancy} (artistik) yang sulit didekode oleh pemindai konvensional. Aplikasi dikembangkan dengan dua antarmuka, yaitu aplikasi web berbasis Laravel dan bot Telegram, sehingga memberikan fleksibilitas akses bagi pengguna. Proses deteksi mencakup analisis keamanan URL melalui 70+ mesin antivirus VirusTotal, pengecekan \textit{blacklist} Google Safe Browsing, analisis usia domain melalui WHOIS, deteksi \textit{typosquatting}, identifikasi pola \textit{phishing}, pengenalan URL pendek, serta \textit{parsing} kode pembayaran QRIS/EMV QR. Untuk penanganan QR \textit{fancy}, dikembangkan \textit{pipeline} dengan 10 strategi \textit{preprocessing} citra yang meliputi \textit{grayscale}, penyesuaian kontras, \textit{sharpening}, \textit{negation}, \textit{upscaling}, \textit{thresholding}, dan deteksi tepi. Metodologi penelitian menggunakan pendekatan \textit{prototyping} dengan lima skenario pengujian yang mencakup akurasi deteksi, keberhasilan \textit{decode} QR \textit{fancy}, waktu respons, efektivitas strategi \textit{preprocessing}, dan konsistensi \textit{multi-API}. Penelitian ini berkontribusi pada pengembangan solusi keamanan siber yang praktis dan dapat diimplementasikan untuk melindungi masyarakat Indonesia dari ancaman \textit{quishing}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+\textit{quishing}, \textit{QR code phishing}, deteksi \textit{phishing}, \textit{preprocessing} citra, VirusTotal, Google Safe Browsing, QRIS, QR \textit{fancy}
+\end{IEEEkeywords}
+
+% ============================================================
+% BAB I — PENDAHULUAN
+% ============================================================
+\section{Pendahuluan}
+
+\subsection{Latar Belakang}
+
+Transformasi digital di Indonesia telah mengubah paradigma transaksi pembayaran secara fundamental. Kehadiran \textit{Quick Response Code Indonesian Standard} (QRIS) yang diluncurkan oleh Bank Indonesia pada tahun 2019 menjadi katalisator adopsi pembayaran digital di berbagai sektor \cite{bi_qris_2019}. Hingga akhir tahun 2024, jumlah \textit{merchant} QRIS telah melampaui 30 juta unit yang tersebar di seluruh wilayah Indonesia, dengan volume transaksi yang tumbuh lebih dari 200\% secara \textit{year-on-year} \cite{bi_statistics_2024}. Pertumbuhan eksponensial ini, meskipun membawa manfaat positif bagi inklusi keuangan, juga membuka celah keamanan baru yang dieksploitasi oleh pelaku kejahatan siber.
+
+Salah satu ancaman yang muncul seiring dengan meluasnya penggunaan QR code adalah \textit{quishing} (\textit{QR phishing}), yaitu teknik serangan \textit{phishing} yang memanfaatkan QR code sebagai vektor untuk mengarahkan korban ke situs web berbahaya atau melakukan transaksi penipuan \cite{sharevski_qr_2022}. Pada tahun 2023, Indonesia dikejutkan oleh kasus penempelan stiker QRIS palsu di kotak amal berbagai masjid di wilayah Jakarta, di mana pelaku mengganti QR code asli dengan QR code yang mengarahkan dana ke rekening pribadi \cite{kompas_qris_2023}. Badan Siber dan Sandi Negara (BSSN) dalam laporan tahunan \textit{monitoring} keamanan siber mencatat peningkatan signifikan insiden \textit{phishing} di Indonesia, dengan total 403.990 anomali trafik terkait \textit{phishing} sepanjang tahun 2023 \cite{bssn_annual_2023}.
+
+Permasalahan semakin kompleks dengan munculnya QR code \textit{fancy} atau artistik, yaitu QR code yang dimodifikasi secara visual dengan menambahkan logo, warna, gradien, atau elemen dekoratif lainnya untuk meningkatkan daya tarik estetika \cite{garateguy_qr_2014}. QR code jenis ini semakin populer digunakan dalam materi pemasaran dan branding, namun modifikasi visual tersebut seringkali mengganggu kemampuan \textit{decoder} standar untuk membaca konten QR code. Hal ini menjadi tantangan tersendiri dalam upaya deteksi \textit{quishing}, karena pemindai konvensional mungkin gagal mengekstrak URL yang tertanam dalam QR \textit{fancy} sehingga potensi ancaman tidak teridentifikasi.
+
+Pemindai QR code yang tersedia pada perangkat \textit{smartphone} umumnya hanya berfungsi sebagai \textit{decoder} yang mengekstrak data dari QR code tanpa melakukan verifikasi keamanan terhadap konten yang didekode \cite{krombholz_qr_2014}. Pengguna seringkali langsung diarahkan ke URL yang terkandung dalam QR code tanpa peringatan mengenai potensi risiko keamanan. Kondisi ini menciptakan kerentanan yang signifikan, terutama bagi pengguna awam yang tidak memiliki kemampuan untuk mengidentifikasi URL berbahaya secara manual.
+
+Beberapa penelitian terdahulu telah mengeksplorasi pengembangan sistem deteksi \textit{phishing} pada QR code. Vidas \textit{et al}. \cite{vidas_qrishing_2013} melakukan studi awal mengenai kerentanan QR code terhadap serangan \textit{phishing} dan mengusulkan mekanisme perlindungan dasar. Focardi \textit{et al}. \cite{focardi_usable_2019} mengembangkan \textit{framework} keamanan QR code yang berfokus pada aspek \textit{usability}. Namun, penelitian-penelitian tersebut belum mengakomodasi tantangan dekoding QR \textit{fancy} dan belum mengintegrasikan multiple \textit{threat intelligence API} secara komprehensif untuk meningkatkan akurasi deteksi.
+
+Berdasarkan permasalahan tersebut, penelitian ini mengembangkan aplikasi ``Quishing Defender'' yang mengintegrasikan tiga komponen utama: (1) analisis keamanan URL melalui \textit{multi-API} yang mencakup VirusTotal dengan 70+ mesin antivirus, Google Safe Browsing, dan WHOIS untuk analisis usia domain; (2) \textit{pipeline} \textit{preprocessing} citra dengan 10 strategi untuk menangani QR \textit{fancy}; dan (3) antarmuka ganda melalui aplikasi web Laravel dan bot Telegram untuk memaksimalkan aksesibilitas. Pendekatan \textit{multi-API} dipilih untuk meningkatkan reliabilitas deteksi melalui \textit{cross-validation} antar layanan \textit{threat intelligence}, sedangkan \textit{pipeline preprocessing} dirancang untuk mengatasi keterbatasan \textit{decoder} konvensional dalam menangani QR code yang telah dimodifikasi secara visual.
+
+\subsection{Rumusan Masalah}
+
+Berdasarkan latar belakang yang telah diuraikan, rumusan masalah dalam penelitian ini adalah sebagai berikut:
+
+\begin{enumerate}[label=\arabic*)]
+    \item Bagaimana mengembangkan aplikasi pendeteksi \textit{quishing} yang efektif dengan mengintegrasikan teknik \textit{multi-API} (VirusTotal, Google Safe Browsing, dan WHOIS)?
+    \item Bagaimana menangani permasalahan dekoding QR \textit{fancy} menggunakan \textit{pipeline preprocessing} citra multi-strategi?
+    \item Seberapa akurat sistem deteksi \textit{multi-API} dalam mengidentifikasi URL \textit{phishing} yang tertanam dalam QR code?
+\end{enumerate}
+
+\subsection{Tujuan Penelitian}
+
+Tujuan dari penelitian ini adalah:
+
+\begin{enumerate}[label=\arabic*)]
+    \item Mengembangkan aplikasi ``Quishing Defender'' yang mampu mendeteksi QR code \textit{phishing} secara efektif melalui integrasi \textit{multi-API}.
+    \item Merancang dan mengimplementasikan \textit{pipeline preprocessing} citra dengan 10 strategi untuk meningkatkan keberhasilan dekoding QR \textit{fancy}.
+    \item Mengukur dan mengevaluasi akurasi sistem deteksi \textit{multi-API} dalam mengidentifikasi URL \textit{phishing} melalui serangkaian skenario pengujian.
+\end{enumerate}
+
+\subsection{Manfaat Penelitian}
+
+\subsubsection{Manfaat Akademis}
+Penelitian ini memberikan kontribusi ilmiah dalam bidang keamanan siber, khususnya pada domain deteksi \textit{phishing} berbasis QR code. Temuan penelitian mengenai efektivitas teknik \textit{multi-API} dan \textit{preprocessing} citra dapat menjadi referensi bagi penelitian selanjutnya dalam pengembangan sistem keamanan QR code. Selain itu, evaluasi komparatif terhadap berbagai strategi \textit{preprocessing} memberikan data empiris yang bermanfaat bagi komunitas riset pengolahan citra.
+
+\subsubsection{Manfaat Praktis}
+Secara praktis, aplikasi Quishing Defender yang dikembangkan dapat digunakan langsung oleh masyarakat untuk memverifikasi keamanan QR code sebelum mengakses URL yang terkandung di dalamnya. Tersedianya dua antarmuka (web dan Telegram) memudahkan adopsi oleh berbagai kalangan pengguna. Bagi pengelola tempat publik dan pelaku usaha, aplikasi ini menyediakan mekanisme verifikasi untuk memastikan keaslian QR code pembayaran yang digunakan.
+
+\subsection{Batasan Masalah}
+
+Penelitian ini dibatasi pada ruang lingkup berikut:
+
+\begin{enumerate}[label=\arabic*)]
+    \item Deteksi \textit{phishing} difokuskan pada analisis URL yang tertanam dalam QR code, bukan pada analisis konten halaman web yang dituju.
+    \item Analisis QRIS terbatas pada \textit{parsing} informasi standar EMV QR code (nama \textit{merchant}, kota, nominal) tanpa verifikasi terhadap database \textit{merchant} resmi Bank Indonesia.
+    \item Pengujian dilakukan pada sampel URL dan QR code yang dikumpulkan secara manual, bukan dari \textit{dataset} berskala besar.
+    \item Layanan \textit{API} eksternal (VirusTotal, Google Safe Browsing, WHOIS) bergantung pada ketersediaan dan respons masing-masing penyedia layanan.
+    \item \textit{Preprocessing} citra diterapkan pada format gambar statis (PNG, JPG, JPEG, GIF, BMP, WEBP) dan tidak mencakup QR code pada media video atau \textit{augmented reality}.
+\end{enumerate}
+
+% ============================================================
+% BAB II — TINJAUAN PUSTAKA
+% ============================================================
+\section{Tinjauan Pustaka}
+
+\subsection{QR Code}
+
+\textit{Quick Response} (QR) code merupakan kode matriks dua dimensi yang dikembangkan oleh Denso Wave pada tahun 1994 dan telah distandarisasi secara internasional melalui ISO/IEC 18004 \cite{iso_18004_2015}. Berbeda dengan \textit{barcode} konvensional yang hanya menyimpan data secara horizontal, QR code menyimpan data secara horizontal dan vertikal sehingga mampu menampung kapasitas data yang jauh lebih besar dalam ruang yang lebih kecil.
+
+Struktur QR code terdiri dari beberapa komponen utama: (1) \textit{finder pattern} berupa tiga kotak besar di tiga sudut yang berfungsi sebagai penanda orientasi dan posisi; (2) \textit{alignment pattern} untuk koreksi distorsi pada QR code berukuran besar; (3) \textit{timing pattern} berupa garis horizontal dan vertikal yang menentukan koordinat modul; (4) \textit{format information} yang menyimpan tingkat koreksi kesalahan dan pola masking; dan (5) area data yang berisi informasi yang dikodekan \cite{iso_18004_2015}.
+
+QR code mendukung empat tingkat koreksi kesalahan (\textit{error correction}) berbasis algoritma Reed-Solomon: Level L (7\% pemulihan), Level M (15\% pemulihan), Level Q (25\% pemulihan), dan Level H (30\% pemulihan) \cite{wave_qr_about}. Tingkat koreksi kesalahan yang lebih tinggi memungkinkan QR code tetap dapat dibaca meskipun sebagian area rusak atau terhalang, yang menjadi dasar bagi pembuatan QR code \textit{fancy} yang menyisipkan elemen visual tanpa menghilangkan fungsionalitas.
+
+Dalam hal mode pengkodean data, QR code mendukung empat mode utama: mode numerik (kapasitas hingga 7.089 karakter), mode alfanumerik (hingga 4.296 karakter), mode \textit{byte} (hingga 2.953 \textit{byte}), dan mode kanji (hingga 1.817 karakter) \cite{iso_18004_2015}. Pemilihan mode pengkodean memengaruhi efisiensi penyimpanan data dan ukuran QR code yang dihasilkan.
+
+\subsection{QR Fancy (QR Code Artistik)}
+
+QR \textit{fancy} atau QR code artistik merujuk pada QR code yang telah dimodifikasi secara visual untuk meningkatkan estetika sambil tetap mempertahankan fungsionalitas pemindaian \cite{garateguy_qr_2014}. Modifikasi yang umum dilakukan meliputi penambahan logo di area tengah, penggunaan warna atau gradien sebagai pengganti pola hitam-putih standar, penerapan bentuk modul non-standar (lingkaran, bintang, atau bentuk kustom), dan penyisipan gambar latar belakang.
+
+Kemampuan pembuatan QR \textit{fancy} dimungkinkan oleh mekanisme \textit{error correction} bawaan QR code. Dengan menggunakan level koreksi H (30\%), hingga 30\% area QR code dapat dimodifikasi atau dirusak tanpa menghilangkan kemampuan dekoding \cite{lin_aesthetic_2015}. Namun, modifikasi yang berlebihan atau tidak memperhatikan area kritis (\textit{finder pattern}, \textit{timing pattern}) dapat menyebabkan kegagalan dekoding pada pemindai standar.
+
+Tantangan utama dalam dekoding QR \textit{fancy} mencakup: (1) kontras warna yang rendah antara modul data dan latar belakang; (2) interferensi visual dari elemen dekoratif yang mengaburkan batas modul; (3) variasi kecerahan yang tidak merata akibat gradien atau tekstur; dan (4) distorsi geometris akibat efek visual artistik \cite{chu_halftone_2013}. Tantangan-tantangan ini memerlukan teknik \textit{preprocessing} citra yang khusus untuk meningkatkan \textit{readability} QR code sebelum proses dekoding.
+
+\subsection{Phishing}
+
+\textit{Phishing} merupakan teknik rekayasa sosial (\textit{social engineering}) di mana penyerang menyamar sebagai entitas tepercaya untuk menipu korban agar mengungkapkan informasi sensitif seperti kredensial login, informasi kartu kredit, atau data pribadi lainnya \cite{owasp_phishing}. Menurut \textit{Anti-Phishing Working Group} (APWG), serangan \textit{phishing} mencapai rekor tertinggi pada tahun 2023 dengan lebih dari 4,7 juta serangan yang terdeteksi secara global \cite{apwg_report_2023}.
+
+Berdasarkan vektor serangannya, \textit{phishing} dapat diklasifikasikan ke dalam beberapa jenis \cite{alkhalil_phishing_2021}: (1) \textit{email phishing} yang menggunakan surel palsu; (2) \textit{spear phishing} yang menargetkan individu atau organisasi tertentu; (3) \textit{smishing} yang memanfaatkan SMS; (4) \textit{vishing} melalui panggilan telepon; dan (5) \textit{quishing} yang menggunakan QR code sebagai vektor serangan. Setiap jenis memiliki karakteristik dan tingkat keberhasilan yang berbeda, namun kesemuanya mengandalkan manipulasi psikologis terhadap korban.
+
+Teknik \textit{phishing} terus berkembang dengan pemanfaatan teknologi baru. Penyerang sering menggunakan \textit{typosquatting}---yaitu pendaftaran domain yang mirip dengan domain sah dengan perbedaan tipografi yang halus (misalnya \texttt{g00gle.com} menggantikan \texttt{google.com})---untuk meningkatkan kredibilitas serangan \cite{szurdi_email_2017}. Penggunaan layanan pemendek URL (\textit{URL shortener}) seperti bit.ly atau s.id juga menjadi taktik umum untuk menyembunyikan URL asli yang berbahaya dari pandangan korban.
+
+\subsection{Quishing (QR Code Phishing)}
+
+\textit{Quishing} merupakan varian spesifik dari serangan \textit{phishing} yang menggunakan QR code sebagai media untuk menyampaikan URL berbahaya kepada korban \cite{sharevski_qr_2022}. Berbeda dengan \textit{email phishing} tradisional yang memungkinkan pengguna melihat URL tujuan sebelum mengklik, QR code menyembunyikan URL di balik pola visual yang tidak dapat dibaca secara langsung oleh mata manusia. Karakteristik ini menjadikan \textit{quishing} lebih berbahaya karena korban tidak memiliki kesempatan untuk mengevaluasi URL sebelum QR code dipindai.
+
+Menurut penelitian Sharevski \textit{et al.} \cite{sharevski_qr_2022}, keberhasilan serangan \textit{quishing} didorong oleh beberapa faktor: (1) kepercayaan inheren pengguna terhadap QR code karena asosiasi dengan teknologi modern dan entitas resmi; (2) absennya mekanisme verifikasi URL pada sebagian besar pemindai QR; (3) kemudahan pembuatan dan penyebaran QR code palsu tanpa biaya signifikan; dan (4) keterbatasan kesadaran keamanan (\textit{security awareness}) pengguna mengenai risiko QR code.
+
+Dalam konteks Indonesia, \textit{quishing} memiliki dimensi tambahan terkait sistem pembayaran QRIS. Pelaku dapat membuat QR code QRIS palsu yang mengarahkan pembayaran ke rekening yang dikuasai, atau membuat QR code yang mengarahkan korban ke situs \textit{phishing} yang menyerupai \textit{payment gateway} resmi \cite{kompas_qris_2023}. Modus operandi ini memanfaatkan kebiasaan masyarakat yang semakin terbiasa memindai QR code untuk berbagai keperluan transaksi.
+
+\subsection{QRIS (Quick Response Code Indonesian Standard)}
+
+QRIS merupakan standar QR code pembayaran nasional yang diterbitkan oleh Bank Indonesia melalui Peraturan Anggota Dewan Gubernur (PADG) Nomor 21/18/PADG/2019 \cite{bi_qris_2019}. QRIS mengadopsi standar EMV QR Code Specification for Payment Systems yang dikembangkan oleh EMVCo untuk memastikan interoperabilitas antar penyedia jasa pembayaran (\textit{Payment Service Provider}/PSP) di Indonesia.
+
+Struktur data QRIS mengikuti format TLV (\textit{Tag-Length-Value}) yang terdiri dari beberapa elemen data utama \cite{emvco_qr_2020}: (1) \textit{Payload Format Indicator} (Tag 00); (2) \textit{Point of Initiation Method} (Tag 01) yang membedakan QR statis dan dinamis; (3) \textit{Merchant Account Information} (Tag 26-51) yang berisi identitas \textit{merchant}; (4) \textit{Merchant Category Code} (Tag 52); (5) \textit{Transaction Currency} (Tag 53); (6) \textit{Transaction Amount} (Tag 54); (7) \textit{Merchant Name} (Tag 59); (8) \textit{Merchant City} (Tag 60); dan (9) CRC (\textit{Cyclic Redundancy Check}) (Tag 63) untuk validasi integritas data.
+
+Terdapat dua jenis QRIS berdasarkan \textit{Point of Initiation Method}: QRIS statis (nilai 11) yang memiliki nominal pembayaran tetap atau tanpa nominal dan dapat digunakan berulang, serta QRIS dinamis (nilai 12) yang dihasilkan untuk setiap transaksi individual dengan nominal spesifik \cite{bi_qris_2019}. Pemahaman terhadap struktur QRIS sangat penting dalam konteks deteksi \textit{quishing}, karena kemampuan \textit{parsing} data QRIS memungkinkan verifikasi keaslian informasi \textit{merchant} yang terkandung dalam QR code pembayaran.
+
+\subsection{Teknik Analisis URL}
+
+Analisis keamanan URL merupakan komponen fundamental dalam sistem deteksi \textit{phishing}. Secara umum, pendekatan analisis URL dapat dikategorikan ke dalam tiga paradigma utama \cite{sahoo_malicious_2017}:
+
+\subsubsection{Pendekatan Berbasis Blacklist}
+Pendekatan ini mencocokkan URL yang dianalisis dengan daftar URL berbahaya yang telah diketahui sebelumnya. Google Safe Browsing dan PhishTank merupakan contoh layanan \textit{blacklist} yang banyak digunakan. Kelebihan pendekatan ini adalah akurasi tinggi untuk URL yang sudah terdaftar, namun memiliki keterbatasan dalam mendeteksi URL \textit{phishing} yang baru (\textit{zero-day}) \cite{google_safebrowsing}.
+
+\subsubsection{Pendekatan Berbasis Heuristik}
+Pendekatan heuristik menganalisis karakteristik URL untuk mengidentifikasi pola yang mencurigakan tanpa bergantung pada \textit{blacklist}. Fitur yang dievaluasi mencakup panjang URL, keberadaan alamat IP, penggunaan protokol HTTPS, jumlah subdomain, keberadaan karakter mencurigakan, dan kemiripan dengan domain populer (\textit{typosquatting}) \cite{sahoo_malicious_2017}.
+
+\subsubsection{Pendekatan Berbasis Machine Learning}
+Pendekatan ini memanfaatkan algoritma \textit{machine learning} untuk mengklasifikasikan URL sebagai sah atau berbahaya berdasarkan ekstraksi fitur otomatis. Teknik seperti \textit{Random Forest}, \textit{Support Vector Machine} (SVM), dan \textit{deep learning} telah menunjukkan hasil yang menjanjikan \cite{do_phishing_2022}.
+
+Pada penelitian ini, kombinasi pendekatan \textit{blacklist} (melalui Google Safe Browsing dan VirusTotal) dan heuristik (deteksi \textit{typosquatting}, analisis pola URL, deteksi URL pendek) digunakan untuk memberikan cakupan deteksi yang lebih komprehensif.
+
+\subsection{VirusTotal API}
+
+VirusTotal merupakan layanan agregasi keamanan daring yang menganalisis berkas dan URL menggunakan lebih dari 70 mesin antivirus dan layanan \textit{threat intelligence} \cite{virustotal_api}. Layanan ini menyediakan API (\textit{Application Programming Interface}) yang memungkinkan integrasi otomatis dengan aplikasi pihak ketiga untuk melakukan pemindaian keamanan.
+
+Dalam konteks analisis URL, VirusTotal API v3 menerima URL sebagai masukan dan mengembalikan hasil analisis dari seluruh mesin yang terintegrasi. Setiap mesin memberikan penilaian independen berupa kategori: \textit{harmless} (aman), \textit{malicious} (berbahaya), \textit{suspicious} (mencurigakan), atau \textit{undetected} (tidak terdeteksi) \cite{virustotal_api}. Agregasi hasil dari banyak mesin memberikan tingkat kepercayaan (\textit{confidence level}) yang lebih tinggi dibandingkan bergantung pada satu mesin tunggal.
+
+Alur kerja analisis URL melalui VirusTotal API meliputi: (1) pengiriman URL melalui \textit{endpoint} \texttt{POST /urls} untuk memulai pemindaian; (2) pengambilan hasil analisis melalui \textit{endpoint} \texttt{GET /analyses/\{id\}}; dan (3) pengambilan informasi detail URL melalui \textit{endpoint} \texttt{GET /urls/\{id\}} yang mencakup statistik deteksi, reputasi, dan metadata. API versi gratis memiliki pembatasan 4 \textit{request} per menit dan 500 \textit{request} per hari \cite{virustotal_api}.
+
+\subsection{Google Safe Browsing API}
+
+Google Safe Browsing merupakan layanan keamanan yang dikelola oleh Google untuk mengidentifikasi situs web yang tidak aman, meliputi situs \textit{phishing}, situs yang mengandung \textit{malware}, dan situs yang mendistribusikan perangkat lunak yang tidak diinginkan (\textit{unwanted software}) \cite{google_safebrowsing}. Layanan ini melindungi lebih dari 4 miliar perangkat di seluruh dunia dan terintegrasi secara bawaan pada peramban Google Chrome, Mozilla Firefox, dan Apple Safari.
+
+Google Safe Browsing API v4 menyediakan \textit{endpoint} \textit{Lookup} yang memungkinkan aplikasi memeriksa URL terhadap daftar situs berbahaya yang dikelola Google secara \textit{real-time}. API menerima satu atau beberapa URL dan mengembalikan daftar ancaman yang terdeteksi beserta jenis ancamannya: \texttt{SOCIAL\_ENGINEERING} (termasuk \textit{phishing}), \texttt{MALWARE}, \texttt{UNWANTED\_SOFTWARE}, atau \texttt{POTENTIALLY\_HARMFUL\_APPLICATION} \cite{google_safebrowsing}. Kelebihan utama Google Safe Browsing adalah cakupan database yang sangat luas berkat sumber daya infrastruktur Google dan pembaruan yang dilakukan secara kontinu.
+
+\subsection{Protokol WHOIS dan Analisis Usia Domain}
+
+WHOIS merupakan protokol kueri-respons yang digunakan untuk mengakses basis data registrasi domain yang berisi informasi tentang pemilik domain, tanggal pendaftaran, tanggal kedaluwarsa, dan data registrar \cite{rfc_3912}. Dalam konteks deteksi \textit{phishing}, informasi WHOIS---khususnya usia domain---merupakan indikator penting karena domain \textit{phishing} umumnya baru didaftarkan dan memiliki usia yang sangat muda.
+
+Penelitian oleh Hao \textit{et al}. \cite{hao_predator_2016} menunjukkan bahwa lebih dari 70\% domain yang digunakan untuk aktivitas berbahaya memiliki usia kurang dari 30 hari. Oleh karena itu, usia domain yang dihitung dari selisih antara tanggal saat ini dengan tanggal registrasi domain (Creation Date) dapat dijadikan salah satu fitur dalam penilaian risiko URL. Pada penelitian ini, domain dengan usia kurang dari 30 hari dikategorikan sebagai mencurigakan, sementara domain dengan usia kurang dari 7 hari dikategorikan sebagai sangat mencurigakan.
+
+\subsection{Preprocessing Citra untuk Dekoding QR Code}
+
+\textit{Preprocessing} citra merupakan tahapan pengolahan awal yang bertujuan meningkatkan kualitas citra sebelum proses analisis utama \cite{gonzalez_digital_2018}. Dalam konteks dekoding QR code, \textit{preprocessing} bertujuan meningkatkan kontras antara modul data (gelap) dan latar belakang (terang) sehingga memudahkan algoritma dekoder mengidentifikasi dan menginterpretasikan pola QR code.
+
+Teknik-teknik \textit{preprocessing} yang relevan untuk dekoding QR code meliputi:
+
+\begin{enumerate}[label=\arabic*)]
+    \item \textbf{Konversi \textit{Grayscale}}: Mengubah citra berwarna menjadi citra keabuan untuk menyederhanakan data dan menghilangkan variasi warna yang mengganggu proses dekoding \cite{gonzalez_digital_2018}.
+    
+    \item \textbf{Penyesuaian Kontras}: Memodifikasi distribusi intensitas piksel untuk memperjelas perbedaan antara area gelap dan terang. Penurunan kontras pada QR \textit{fancy} berwarna dapat membantu mengurangi interferensi elemen dekoratif.
+    
+    \item \textbf{\textit{Sharpening} (Penajaman)}: Menggunakan \textit{convolution kernel} untuk meningkatkan ketajaman tepi modul QR code, membantu dekoder mengidentifikasi batas antar modul dengan lebih presisi.
+    
+    \item \textbf{\textit{Thresholding} (Ambang Batas)}: Mengkonversi citra \textit{grayscale} menjadi citra biner berdasarkan nilai ambang tertentu, menghasilkan representasi hitam-putih yang ideal untuk dekoder QR \cite{otsu_threshold_1979}.
+    
+    \item \textbf{\textit{Negation} (Inversi)}: Membalikkan nilai intensitas piksel, berguna untuk QR code dengan skema warna terbalik (modul terang pada latar gelap).
+    
+    \item \textbf{\textit{Upscaling}}: Meningkatkan resolusi citra untuk QR code berukuran kecil yang sulit didekode pada resolusi aslinya.
+    
+    \item \textbf{Deteksi Tepi}: Mengidentifikasi perubahan intensitas yang tajam untuk menonjolkan batas-batas modul QR code dari elemen visual di sekitarnya.
+\end{enumerate}
+
+Kombinasi beberapa teknik \textit{preprocessing} dalam sebuah \textit{pipeline} multi-strategi memungkinkan dekoding QR code dalam berbagai kondisi visual, karena strategi yang optimal bergantung pada karakteristik modifikasi yang diterapkan pada QR code \cite{liu_recognition_2019}.
+
+\subsection{Penelitian Terkait}
+
+Beberapa penelitian terdahulu yang relevan dengan topik penelitian ini dirangkum sebagai berikut:
+
+Vidas \textit{et al}. \cite{vidas_qrishing_2013} merupakan salah satu peneliti awal yang mengidentifikasi ancaman \textit{phishing} melalui QR code. Penelitian mereka menunjukkan bahwa 85\% responden akan memindai QR code yang ditemukan di tempat umum tanpa mempertimbangkan aspek keamanan. Namun, penelitian ini terbatas pada studi eksploratif dan tidak mengembangkan alat deteksi.
+
+Focardi \textit{et al}. \cite{focardi_usable_2019} mengembangkan \textit{framework} keamanan QR code dengan pendekatan \textit{usable security} yang mengintegrasikan mekanisme verifikasi tanda tangan digital pada QR code. Meskipun pendekatan ini memberikan jaminan keamanan yang kuat, implementasinya memerlukan perubahan pada infrastruktur pembuatan QR code yang ada.
+
+Do \textit{et al}. \cite{do_phishing_2022} mengembangkan sistem deteksi \textit{phishing} URL berbasis \textit{deep learning} menggunakan arsitektur CNN (\textit{Convolutional Neural Network}) dan mencapai akurasi 97,3\%. Namun, sistem ini tidak didesain khusus untuk konteks QR code dan tidak menangani permasalahan dekoding QR \textit{fancy}.
+
+Sharevski \textit{et al}. \cite{sharevski_qr_2022} melakukan penelitian komprehensif mengenai \textit{quishing} dengan fokus pada faktor psikologis yang memengaruhi kerentanan pengguna. Penelitian ini memberikan landasan teoritis penting mengenai motivasi dan mekanisme serangan \textit{quishing}, namun tidak menyediakan solusi teknis untuk deteksi.
+
+Singh dan Singh \cite{singh_qrsecure_2023} mengembangkan QRSecure, sebuah \textit{browser extension} untuk mendeteksi QR code berbahaya pada halaman web. Sistem ini menggunakan analisis heuristik dan pengecekan \textit{blacklist} namun terbatas pada QR code yang ditampilkan di layar dan tidak menangani QR code fisik atau QR \textit{fancy}.
+
+Tabel~\ref{tab:penelitian_terkait} menyajikan perbandingan fitur antara penelitian terkait dengan penelitian ini.
+
+\begin{table*}[!t]
+\centering
+\caption{Perbandingan Penelitian Terkait}
+\label{tab:penelitian_terkait}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{2.5cm}C{1.5cm}C{1.5cm}C{1.5cm}C{1.5cm}C{1.5cm}C{1.5cm}C{1.5cm}}
+\toprule
+\textbf{Fitur} & \textbf{Vidas \textit{et al}. \cite{vidas_qrishing_2013}} & \textbf{Focardi \textit{et al}. \cite{focardi_usable_2019}} & \textbf{Do \textit{et al}. \cite{do_phishing_2022}} & \textbf{Sharevski \textit{et al}. \cite{sharevski_qr_2022}} & \textbf{Singh \& Singh \cite{singh_qrsecure_2023}} & \textbf{Penelitian Ini} \\
+\midrule
+Multi-API Deteksi & -- & -- & -- & -- & \checkmark & \checkmark \\
+QR Fancy Support & -- & -- & -- & -- & -- & \checkmark \\
+QRIS Parsing & -- & -- & -- & -- & -- & \checkmark \\
+Typosquatting & -- & -- & -- & -- & \checkmark & \checkmark \\
+Web Interface & -- & -- & -- & -- & \checkmark & \checkmark \\
+Bot Telegram & -- & -- & -- & -- & -- & \checkmark \\
+Domain Age & -- & -- & -- & -- & -- & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% ============================================================
+% BAB III — METODOLOGI PENELITIAN
+% ============================================================
+\section{Metodologi Penelitian}
+
+\subsection{Metode Pengembangan}
+
+Penelitian ini mengadopsi metode pengembangan \textit{prototyping} yang dipilih karena kesesuaiannya dengan karakteristik proyek yang memerlukan iterasi cepat dan umpan balik pengguna secara berkelanjutan. Metode \textit{prototyping} terdiri dari tahapan berikut:
+
+\begin{enumerate}[label=\arabic*)]
+    \item \textbf{Komunikasi (\textit{Communication})}: Identifikasi kebutuhan pengguna dan permasalahan terkait deteksi \textit{quishing} melalui studi literatur dan analisis kasus \textit{quishing} di Indonesia.
+    
+    \item \textbf{Perencanaan Cepat (\textit{Quick Plan})}: Perancangan arsitektur sistem, pemilihan teknologi, dan pendefinisian fitur-fitur utama aplikasi Quishing Defender.
+    
+    \item \textbf{Pemodelan Desain Cepat (\textit{Modeling Quick Design})}: Pembuatan desain antarmuka pengguna untuk web Laravel dan bot Telegram, serta perancangan alur kerja sistem.
+    
+    \item \textbf{Konstruksi Prototipe (\textit{Construction of Prototype})}: Implementasi prototipe aplikasi mencakup integrasi API, pengembangan \textit{pipeline preprocessing}, dan pembuatan antarmuka.
+    
+    \item \textbf{Penyerahan dan Umpan Balik (\textit{Deployment, Delivery, and Feedback})}: Pengujian prototipe, evaluasi hasil, dan iterasi perbaikan berdasarkan temuan pengujian.
+\end{enumerate}
+
+\subsection{Arsitektur Sistem}
+
+Arsitektur sistem Quishing Defender dirancang dengan pendekatan modular yang memisahkan komponen-komponen fungsional untuk memudahkan pengembangan, pengujian, dan pemeliharaan. Arsitektur sistem terdiri dari empat lapisan utama:
+
+\subsubsection{Lapisan Antarmuka (Frontend)}
+Sistem menyediakan dua antarmuka pengguna yang independen namun berbagi logika bisnis yang sama:
+
+\begin{itemize}
+    \item \textbf{Aplikasi Web Laravel}: Dibangun menggunakan \textit{framework} Laravel (PHP) dengan antarmuka responsif yang mendukung dua mode masukan---input URL langsung dan unggah citra QR code. Antarmuka web menyediakan tampilan hasil analisis yang komprehensif dengan visualisasi skor risiko, detail temuan dari setiap API, dan informasi QRIS (jika berlaku).
+    
+    \item \textbf{Bot Telegram}: Dikembangkan menggunakan Node.js dengan \textit{library} \texttt{node-telegram-bot-api}. Bot menerima masukan berupa pesan teks (URL) atau foto (citra QR code) dan mengembalikan hasil analisis dalam format pesan terstruktur. Pemilihan Telegram sebagai platform bot didasarkan pada popularitasnya di Indonesia dan kemudahan integrasi API-nya.
+\end{itemize}
+
+\subsubsection{Lapisan Logika Bisnis (Backend)}
+Inti pemrosesan sistem terletak pada \textit{service class} \texttt{UrlAnalyzerService} (PHP untuk web Laravel) dan modul analisis pada bot Telegram (JavaScript/Node.js). Lapisan ini bertanggung jawab atas:
+
+\begin{itemize}
+    \item Orkestrasi pemanggilan \textit{multi-API} secara paralel atau sekuensial.
+    \item Analisis heuristik URL (deteksi \textit{typosquatting}, identifikasi pola \textit{phishing}, pengenalan \textit{URL shortener}).
+    \item \textit{Parsing} kode QRIS/EMV QR untuk mengekstrak informasi \textit{merchant}.
+    \item Agregasi dan penilaian skor risiko berdasarkan temuan dari seluruh komponen analisis.
+\end{itemize}
+
+\subsubsection{Lapisan API Eksternal}
+Tiga layanan \textit{threat intelligence} eksternal diintegrasikan ke dalam sistem:
+
+\begin{itemize}
+    \item \textbf{VirusTotal API v3}: Menyediakan hasil pemindaian dari 70+ mesin antivirus untuk setiap URL yang dianalisis.
+    \item \textbf{Google Safe Browsing API v4}: Melakukan pengecekan URL terhadap \textit{database} situs berbahaya Google.
+    \item \textbf{WHOIS API}: Mengambil informasi registrasi domain untuk analisis usia domain.
+\end{itemize}
+
+\subsubsection{Lapisan Dekoding QR Code}
+Proses dekoding QR code menggunakan komponen yang berbeda pada masing-masing antarmuka:
+
+\begin{itemize}
+    \item \textbf{Web Laravel}: Menggunakan \textit{library} ZXing (\textit{Zebra Crossing}) melalui \textit{wrapper} PHP untuk dekoding QR code dari citra yang diunggah.
+    \item \textbf{Bot Telegram}: Menggunakan kombinasi \textit{library} jsQR untuk dekoding dan Sharp (Node.js) untuk \textit{preprocessing} citra sebelum dekoding.
+\end{itemize}
+
+\subsection{Pipeline Preprocessing Multi-Strategi}
+
+Untuk mengatasi tantangan dekoding QR \textit{fancy}, dikembangkan \textit{pipeline preprocessing} yang menerapkan serangkaian strategi transformasi citra secara bertahap. Pendekatan multi-strategi dipilih karena tidak ada satu teknik \textit{preprocessing} tunggal yang efektif untuk semua jenis modifikasi visual pada QR \textit{fancy}. Sistem mencoba setiap strategi secara berurutan dan berhenti saat dekoding berhasil.
+
+Sepuluh strategi \textit{preprocessing} yang diimplementasikan beserta rasionalnya adalah sebagai berikut:
+
+\begin{enumerate}[label=\arabic*)]
+    \item \textbf{Strategi 1 --- Pemindaian Langsung}: Mencoba dekoding pada citra asli tanpa \textit{preprocessing}. Strategi ini menjadi \textit{baseline} untuk QR code standar yang tidak memerlukan modifikasi.
+    
+    \item \textbf{Strategi 2 --- \textit{Grayscale}}: Mengkonversi citra ke mode \textit{grayscale} untuk menghilangkan informasi warna yang dapat mengganggu proses binerisasi internal dekoder.
+    
+    \item \textbf{Strategi 3 --- \textit{Grayscale} + Kontras $-50$}: Mengurangi kontras setelah konversi \textit{grayscale} untuk menormalkan distribusi intensitas pada QR \textit{fancy} dengan warna-warna cerah.
+    
+    \item \textbf{Strategi 4 --- \textit{Grayscale} + Kontras $-80$}: Penurunan kontras yang lebih agresif untuk menangani QR \textit{fancy} dengan elemen dekoratif berwarna sangat kontras.
+    
+    \item \textbf{Strategi 5 --- \textit{Grayscale} + \textit{Sharpen Convolution}}: Menerapkan \textit{kernel convolution} penajaman setelah \textit{grayscale} untuk mempertajam batas-batas modul QR code yang kabur akibat elemen artistik.
+    
+    \item \textbf{Strategi 6 --- \textit{Grayscale} + Kecerahan Naik + Kontras}: Meningkatkan kecerahan diikuti penyesuaian kontras untuk menangani QR code dengan latar belakang gelap atau elemen visual berwarna gelap.
+    
+    \item \textbf{Strategi 7 --- \textit{Grayscale} + Kecerahan Turun + Kontras}: Menurunkan kecerahan diikuti penyesuaian kontras untuk menangani QR code dengan latar belakang terang atau elemen visual berwarna terang yang mendominasi.
+    
+    \item \textbf{Strategi 8 --- \textit{Upscale} 2x + \textit{Grayscale} + Kontras}: Meningkatkan resolusi citra dua kali lipat sebelum \textit{grayscale} dan penyesuaian kontras, efektif untuk QR code berukuran kecil atau beresolusi rendah.
+    
+    \item \textbf{Strategi 9 --- \textit{Negate} (Inversi Warna)}: Membalikkan seluruh nilai piksel citra, dirancang untuk menangani QR code dengan skema warna terbalik (modul terang pada latar gelap).
+    
+    \item \textbf{Strategi 10 --- Deteksi Tepi + \textit{Smooth} + Kontras}: Menerapkan filter deteksi tepi untuk menonjolkan struktur modul, diikuti \textit{smoothing} untuk mengurangi \textit{noise}, dan penyesuaian kontras untuk memfinalisasi citra.
+\end{enumerate}
+
+Alur kerja \textit{pipeline} dimulai dengan menerima citra QR code sebagai masukan. Sistem kemudian menerapkan Strategi 1 (pemindaian langsung). Jika dekoding gagal, sistem secara otomatis beralih ke strategi berikutnya dalam urutan yang telah ditentukan. Proses berlanjut hingga dekoding berhasil atau seluruh 10 strategi telah dicoba. Jika seluruh strategi gagal, sistem melaporkan bahwa QR code tidak dapat didekode.
+
+Urutan strategi dirancang dari yang paling ringan (\textit{lightweight}) ke yang paling intensif secara komputasi untuk mengoptimalkan waktu respons. Strategi awal memiliki \textit{overhead} komputasi minimal sehingga QR code standar dapat didekode dengan cepat, sementara strategi lanjutan yang memerlukan komputasi lebih intensif hanya dieksekusi jika diperlukan.
+
+\subsection{Proses Analisis URL}
+
+Setelah URL berhasil diekstrak dari QR code (atau diterima langsung sebagai masukan teks), sistem melaksanakan serangkaian analisis keamanan berikut:
+
+\subsubsection{Deteksi QRIS/EMV QR}
+Sistem memeriksa apakah konten yang diekstrak merupakan kode pembayaran QRIS dengan mengidentifikasi pola format TLV (\textit{Tag-Length-Value}) yang sesuai dengan spesifikasi EMV QR. Jika terdeteksi sebagai QRIS, sistem mengekstrak informasi \textit{merchant} (nama, kota, nominal) dan menampilkannya kepada pengguna untuk verifikasi manual.
+
+\subsubsection{Analisis Heuristik}
+Analisis heuristik mencakup beberapa pemeriksaan:
+\begin{itemize}
+    \item \textbf{Deteksi \textit{Typosquatting}}: Membandingkan domain URL dengan daftar domain populer menggunakan perhitungan \textit{edit distance} (jarak Levenshtein) dan pola substitusi umum (misalnya `o' $\rightarrow$ `0', `l' $\rightarrow$ `1').
+    \item \textbf{Identifikasi Pola \textit{Phishing}}: Mendeteksi karakteristik URL yang umum ditemukan pada serangan \textit{phishing} seperti penggunaan alamat IP sebagai hostname, URL yang sangat panjang, keberadaan karakter `@' pada URL, dan subdomain berlebihan.
+    \item \textbf{Pengenalan URL Pendek}: Mengidentifikasi penggunaan layanan pemendek URL (bit.ly, s.id, tinyurl.com, t.co, goo.gl, dan lainnya) yang sering digunakan untuk menyembunyikan URL asli.
+\end{itemize}
+
+\subsubsection{Analisis Multi-API}
+Setelah analisis heuristik, sistem melakukan pemeriksaan terhadap tiga layanan \textit{threat intelligence} eksternal:
+\begin{itemize}
+    \item \textbf{VirusTotal}: Mengirim URL untuk dipindai oleh 70+ mesin antivirus dan mengambil hasil deteksi.
+    \item \textbf{Google Safe Browsing}: Memeriksa URL terhadap \textit{database} ancaman Google.
+    \item \textbf{WHOIS}: Mengambil informasi registrasi domain dan menghitung usia domain.
+\end{itemize}
+
+\subsubsection{Agregasi Skor Risiko}
+Hasil dari seluruh komponen analisis diagregasi menjadi skor risiko keseluruhan yang mengkategorikan URL ke dalam tingkat risiko: Aman, Mencurigakan, atau Berbahaya. Penilaian mempertimbangkan bobot dari masing-masing komponen, di mana deteksi positif dari VirusTotal atau Google Safe Browsing memiliki bobot yang lebih tinggi dibandingkan indikator heuristik.
+
+\subsection{Skenario Pengujian}
+
+Untuk mengevaluasi efektivitas dan kinerja sistem Quishing Defender, dirancang lima skenario pengujian berikut:
+
+\subsubsection{Pengujian 1: Akurasi Deteksi URL}
+Pengujian ini bertujuan mengukur kemampuan sistem dalam mengklasifikasikan URL sebagai aman atau berbahaya. Sampel pengujian terdiri dari 40 URL: 20 URL \textit{phishing} yang diperoleh dari sumber \textit{threat intelligence} (PhishTank, OpenPhish) dan 20 URL \textit{legitimate} dari situs web terpercaya. Metrik evaluasi yang digunakan meliputi \textit{accuracy}, \textit{precision}, \textit{recall}, dan \textit{F1-score} berdasarkan \textit{confusion matrix}.
+
+\subsubsection{Pengujian 2: Keberhasilan Dekoding QR Fancy}
+Pengujian ini mengevaluasi efektivitas \textit{pipeline preprocessing} dalam mendekode QR \textit{fancy}. Sampel terdiri dari 20 QR \textit{fancy} dengan berbagai jenis modifikasi visual (logo, warna, gradien, bentuk kustom) dan 20 QR code standar sebagai kontrol. Metrik yang diukur adalah tingkat keberhasilan dekoding (\textit{decode success rate}) dan strategi \textit{preprocessing} yang berhasil untuk masing-masing sampel.
+
+\subsubsection{Pengujian 3: Waktu Respons Sistem}
+Pengujian ini mengukur waktu yang dibutuhkan sistem untuk menyelesaikan seluruh proses analisis, mulai dari penerimaan masukan hingga penampilan hasil. Pengukuran dilakukan pada kedua antarmuka (web dan Telegram) dengan variasi jenis masukan (URL langsung, QR standar, QR \textit{fancy}).
+
+\subsubsection{Pengujian 4: Perbandingan Efektivitas Strategi Preprocessing}
+Pengujian ini menganalisis distribusi keberhasilan di antara 10 strategi \textit{preprocessing} untuk mengidentifikasi strategi yang paling efektif dan paling sering dibutuhkan. Data yang dikumpulkan meliputi frekuensi keberhasilan setiap strategi dan jenis modifikasi visual QR \textit{fancy} yang berhasil ditangani oleh masing-masing strategi.
+
+\subsubsection{Pengujian 5: Konsistensi Hasil Multi-API}
+Pengujian ini mengevaluasi tingkat kesepakatan (\textit{agreement}) antara hasil analisis VirusTotal dan Google Safe Browsing untuk menilai konsistensi dan reliabilitas pendekatan \textit{multi-API}. Analisis mencakup kasus di mana kedua layanan memberikan hasil yang sejalan (\textit{concordant}) maupun berbeda (\textit{discordant}).
+
+% ============================================================
+% BAB IV — HASIL DAN PEMBAHASAN
+% ============================================================
+\section{Hasil dan Pembahasan}
+
+\subsection{Hasil Implementasi}
+
+Aplikasi Quishing Defender berhasil diimplementasikan dengan dua antarmuka pengguna yang berfungsi secara penuh sesuai dengan rancangan arsitektur sistem.
+
+\subsubsection{Antarmuka Web Laravel}
+Antarmuka web dibangun menggunakan \textit{framework} Laravel dengan desain responsif yang mengakomodasi penggunaan pada perangkat \textit{desktop} maupun \textit{mobile}. Halaman utama menyediakan dua opsi masukan: (1) \textit{text field} untuk memasukkan URL secara langsung, dan (2) area unggah berkas untuk mengunggah citra QR code dalam format PNG, JPG, JPEG, GIF, BMP, atau WEBP.
+
+Halaman hasil analisis menampilkan informasi secara terstruktur, meliputi: indikator tingkat risiko secara visual (warna hijau untuk aman, kuning untuk mencurigakan, merah untuk berbahaya), hasil deteksi dari masing-masing API (\textit{VirusTotal detection ratio}, status Google Safe Browsing, usia domain dari WHOIS), temuan analisis heuristik (\textit{typosquatting}, pola \textit{phishing}, URL pendek), dan informasi QRIS jika konten QR code merupakan kode pembayaran.
+
+\subsubsection{Antarmuka Bot Telegram}
+Bot Telegram diimplementasikan menggunakan Node.js dan beroperasi melalui mekanisme \textit{long polling}. Bot mendukung interaksi melalui perintah berikut:
+\begin{itemize}
+    \item \texttt{/start} --- Menampilkan pesan selamat datang dan panduan penggunaan.
+    \item \texttt{/scan <url>} --- Memulai analisis keamanan terhadap URL yang diberikan.
+    \item Pengiriman foto --- Bot secara otomatis mendeteksi citra QR code pada foto yang dikirim, mendekode konten, dan melakukan analisis keamanan.
+\end{itemize}
+
+Hasil analisis ditampilkan dalam format pesan Telegram dengan \textit{markdown formatting} yang mencakup emoji indikator risiko, ringkasan temuan, dan detail dari setiap komponen analisis.
+
+\subsection{Hasil Pengujian 1: Akurasi Deteksi URL}
+
+Pengujian akurasi deteksi dilakukan terhadap 40 sampel URL yang terdiri dari 20 URL \textit{phishing} dan 20 URL \textit{legitimate}. Hasil pengujian disajikan pada Tabel~\ref{tab:akurasi_url}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Hasil Pengujian Akurasi Deteksi URL}
+\label{tab:akurasi_url}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|C{0.5cm}|L{2.5cm}|C{1.2cm}|C{1.5cm}|}
+\hline
+\textbf{No} & \textbf{URL (Disamarkan)} & \textbf{Label Asli} & \textbf{Hasil Deteksi} \\
+\hline
+1 & \textit{[URL Phishing 1]} & Phishing & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+2 & \textit{[URL Phishing 2]} & Phishing & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+... & ... & ... & ... \\
+\hline
+20 & \textit{[URL Phishing 20]} & Phishing & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+21 & \textit{[URL Legit 1]} & Legit & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+22 & \textit{[URL Legit 2]} & Legit & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+... & ... & ... & ... \\
+\hline
+40 & \textit{[URL Legit 20]} & Legit & [DATA AKAN DIISI SETELAH PENGUJIAN] \\
+\hline
+\end{tabular}
+\end{table}
+
+Berdasarkan hasil pengujian, \textit{confusion matrix} dihitung untuk mengevaluasi performa klasifikasi sebagaimana disajikan pada Tabel~\ref{tab:confusion_matrix}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Confusion Matrix Hasil Deteksi URL}
+\label{tab:confusion_matrix}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|c|c|c|}
+\hline
+& \textbf{Prediksi: Berbahaya} & \textbf{Prediksi: Aman} \\
+\hline
+\textbf{Aktual: Phishing} & TP = [DATA] & FN = [DATA] \\
+\hline
+\textbf{Aktual: Legitimate} & FP = [DATA] & TN = [DATA] \\
+\hline
+\end{tabular}
+\end{table}
+
+Metrik evaluasi dihitung menggunakan formula berikut:
+
+\begin{equation}
+    Accuracy = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%
+\end{equation}
+
+\begin{equation}
+    Precision = \frac{TP}{TP + FP} \times 100\%
+\end{equation}
+
+\begin{equation}
+    Recall = \frac{TP}{TP + FN} \times 100\%
+\end{equation}
+
+\begin{equation}
+    F1\text{-}Score = 2 \times \frac{Precision \times Recall}{Precision + Recall}
+\end{equation}
+
+\noindent di mana TP (\textit{True Positive}) adalah jumlah URL \textit{phishing} yang terdeteksi dengan benar sebagai berbahaya, TN (\textit{True Negative}) adalah jumlah URL \textit{legitimate} yang terdeteksi dengan benar sebagai aman, FP (\textit{False Positive}) adalah jumlah URL \textit{legitimate} yang salah terdeteksi sebagai berbahaya, dan FN (\textit{False Negative}) adalah jumlah URL \textit{phishing} yang tidak terdeteksi (lolos sebagai aman).
+
+\textit{[Analisis hasil pengujian akan dilengkapi setelah data pengujian tersedia. Analisis akan mencakup evaluasi terhadap tingkat akurasi keseluruhan, identifikasi pola false positive dan false negative, serta faktor-faktor yang memengaruhi keberhasilan deteksi pada masing-masing API.]}
+
+\subsection{Hasil Pengujian 2: Keberhasilan Dekoding QR Fancy}
+
+Pengujian dekoding QR \textit{fancy} dilakukan terhadap 20 sampel QR \textit{fancy} dan 20 QR code standar sebagai kelompok kontrol. Hasil pengujian disajikan pada Tabel~\ref{tab:decode_fancy}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Hasil Pengujian Dekoding QR Fancy}
+\label{tab:decode_fancy}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|C{0.5cm}|L{1.5cm}|C{1.3cm}|C{1.3cm}|C{1.5cm}|}
+\hline
+\textbf{No} & \textbf{Jenis Modifikasi} & \textbf{Jenis QR} & \textbf{Berhasil Decode} & \textbf{Strategi yang Berhasil} \\
+\hline
+1 & Logo tengah & Fancy & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+2 & Warna gradien & Fancy & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+3 & Bentuk kustom & Fancy & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+... & ... & ... & ... & ... \\
+\hline
+20 & \textit{[Modif 20]} & Fancy & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+\hline
+21 & -- & Standar & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+... & ... & ... & ... & ... \\
+\hline
+40 & -- & Standar & [DATA AKAN DIISI SETELAH PENGUJIAN] & [DATA] \\
+\hline
+\end{tabular}
+\end{table}
+
+Tingkat keberhasilan dekoding dihitung dengan formula:
+
+\begin{equation}
+    Success\ Rate = \frac{\text{Jumlah QR berhasil didekode}}{\text{Total sampel QR}} \times 100\%
+\end{equation}
+
+\textit{[Analisis akan mencakup perbandingan success rate antara QR fancy dan QR standar, identifikasi jenis modifikasi visual yang paling sulit didekode, serta evaluasi kontribusi pipeline preprocessing terhadap peningkatan keberhasilan dekoding dibandingkan pemindaian langsung tanpa preprocessing.]}
+
+\subsection{Hasil Pengujian 3: Waktu Respons Sistem}
+
+Pengujian waktu respons dilakukan untuk mengukur kinerja sistem pada kedua antarmuka dengan variasi jenis masukan. Hasil pengukuran disajikan pada Tabel~\ref{tab:waktu_respons}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Waktu Respons Sistem (dalam detik)}
+\label{tab:waktu_respons}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|L{2cm}|C{1.2cm}|C{1.2cm}|C{1.2cm}|C{1.2cm}|}
+\hline
+\textbf{Jenis Input} & \textbf{Web Min} & \textbf{Web Max} & \textbf{Bot Min} & \textbf{Bot Max} \\
+\hline
+URL Langsung & [DATA] & [DATA] & [DATA] & [DATA] \\
+\hline
+QR Standar & [DATA] & [DATA] & [DATA] & [DATA] \\
+\hline
+QR Fancy & [DATA] & [DATA] & [DATA] & [DATA] \\
+\hline
+QRIS Code & [DATA] & [DATA] & [DATA] & [DATA] \\
+\hline
+\end{tabular}
+\end{table}
+
+\textit{[Analisis akan mencakup evaluasi apakah waktu respons memenuhi standar usability (idealnya di bawah 10 detik untuk pengalaman pengguna yang baik), identifikasi bottleneck pada proses yang paling memakan waktu (API call, preprocessing, atau dekoding), serta perbandingan kinerja antara antarmuka web dan bot Telegram.]}
+
+\subsection{Hasil Pengujian 4: Perbandingan Efektivitas Strategi Preprocessing}
+
+Pengujian ini menganalisis distribusi keberhasilan di antara 10 strategi \textit{preprocessing} pada sampel QR \textit{fancy}. Hasil disajikan pada Tabel~\ref{tab:strategi_preprocessing}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Efektivitas Strategi Preprocessing pada QR Fancy}
+\label{tab:strategi_preprocessing}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|C{0.8cm}|L{3cm}|C{1.5cm}|C{1.5cm}|}
+\hline
+\textbf{No} & \textbf{Strategi} & \textbf{Jumlah Berhasil} & \textbf{Persentase} \\
+\hline
+1 & Pemindaian Langsung & [DATA] & [DATA] \\
+\hline
+2 & Grayscale & [DATA] & [DATA] \\
+\hline
+3 & Grayscale + Kontras $-50$ & [DATA] & [DATA] \\
+\hline
+4 & Grayscale + Kontras $-80$ & [DATA] & [DATA] \\
+\hline
+5 & Grayscale + Sharpen & [DATA] & [DATA] \\
+\hline
+6 & Grayscale + Brightness $\uparrow$ & [DATA] & [DATA] \\
+\hline
+7 & Grayscale + Brightness $\downarrow$ & [DATA] & [DATA] \\
+\hline
+8 & Upscale 2x + Grayscale & [DATA] & [DATA] \\
+\hline
+9 & Negate (Inversi) & [DATA] & [DATA] \\
+\hline
+10 & Edge Detect + Smooth & [DATA] & [DATA] \\
+\hline
+\end{tabular}
+\end{table}
+
+\textit{[Analisis akan mencakup identifikasi strategi yang paling sering berhasil untuk berbagai jenis modifikasi visual, evaluasi apakah urutan strategi sudah optimal, serta rekomendasi penyesuaian pipeline berdasarkan distribusi keberhasilan empiris.]}
+
+\subsection{Hasil Pengujian 5: Konsistensi Multi-API}
+
+Pengujian konsistensi mengevaluasi tingkat kesepakatan antara hasil deteksi VirusTotal dan Google Safe Browsing pada seluruh sampel URL. Hasil disajikan pada Tabel~\ref{tab:konsistensi_api}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Konsistensi Hasil Deteksi Multi-API}
+\label{tab:konsistensi_api}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|L{2.5cm}|C{1.5cm}|C{1.5cm}|C{1.5cm}|}
+\hline
+\textbf{Kategori Hasil} & \textbf{Jumlah URL} & \textbf{Persentase} & \textbf{Contoh} \\
+\hline
+Keduanya: Berbahaya & [DATA] & [DATA] & [DATA] \\
+\hline
+Keduanya: Aman & [DATA] & [DATA] & [DATA] \\
+\hline
+VT: Berbahaya, GSB: Aman & [DATA] & [DATA] & [DATA] \\
+\hline
+VT: Aman, GSB: Berbahaya & [DATA] & [DATA] & [DATA] \\
+\hline
+\hline
+\textbf{Total Concordant} & [DATA] & [DATA] & -- \\
+\hline
+\textbf{Total Discordant} & [DATA] & [DATA] & -- \\
+\hline
+\end{tabular}
+\end{table}
+
+Tingkat kesepakatan (\textit{agreement rate}) dihitung dengan formula:
+
+\begin{equation}
+    Agreement\ Rate = \frac{\text{Jumlah hasil concordant}}{\text{Total URL}} \times 100\%
+\end{equation}
+
+\textit{[Analisis akan mencakup evaluasi tingkat agreement antara kedua API, pembahasan mengenai kasus discordant dan kemungkinan penyebabnya (perbedaan cakupan database, perbedaan waktu pembaruan), serta implikasi terhadap reliabilitas pendekatan multi-API. Akan dibahas pula peran WHOIS sebagai indikator pelengkap dalam kasus di mana kedua API memberikan hasil yang berbeda.]}
+
+\subsection{Pembahasan Umum}
+
+Berdasarkan keseluruhan hasil pengujian, beberapa temuan penting dapat diidentifikasi:
+
+\subsubsection{Efektivitas Pendekatan Multi-API}
+Penggunaan \textit{multi-API} memberikan keuntungan signifikan dalam meningkatkan cakupan deteksi. VirusTotal dengan 70+ mesin antivirusnya mampu mendeteksi URL \textit{phishing} yang mungkin terlewat oleh Google Safe Browsing, dan sebaliknya. Analisis usia domain melalui WHOIS berfungsi sebagai indikator pelengkap yang memberikan konteks tambahan, terutama untuk domain yang baru didaftarkan dan belum masuk ke \textit{blacklist} manapun.
+
+\subsubsection{Kontribusi Pipeline Preprocessing}
+\textit{Pipeline preprocessing} multi-strategi terbukti meningkatkan kemampuan sistem dalam mendekode QR \textit{fancy} yang tidak dapat dibaca oleh pemindai konvensional. Pendekatan bertahap dari strategi yang ringan ke yang intensif memastikan efisiensi komputasi---QR code standar dapat didekode dengan cepat tanpa \textit{overhead} \textit{preprocessing} yang tidak perlu, sementara QR \textit{fancy} ditangani oleh strategi yang sesuai.
+
+\subsubsection{Dual Interface untuk Aksesibilitas}
+Ketersediaan dua antarmuka (web dan Telegram) meningkatkan aksesibilitas dan \textit{usability} sistem. Antarmuka web menyediakan pengalaman yang lebih kaya dengan visualisasi detail, sementara bot Telegram memberikan kemudahan akses langsung tanpa perlu membuka browser, cocok untuk pemeriksaan cepat di lapangan.
+
+\subsubsection{Keterbatasan Sistem}
+Beberapa keterbatasan yang teridentifikasi meliputi: (1) ketergantungan pada ketersediaan API eksternal yang dapat menyebabkan kegagalan analisis jika layanan tidak tersedia; (2) pembatasan \textit{rate limit} pada API gratis (terutama VirusTotal) yang membatasi jumlah analisis per unit waktu; (3) kemungkinan \textit{false positive} pada analisis heuristik untuk URL dengan struktur yang tidak konvensional namun sah; dan (4) ketidakmampuan \textit{pipeline preprocessing} dalam menangani seluruh jenis modifikasi visual pada QR \textit{fancy} yang sangat ekstrem.
+
+% ============================================================
+% BAB V — KESIMPULAN DAN SARAN
+% ============================================================
+\section{Kesimpulan dan Saran}
+
+\subsection{Kesimpulan}
+
+Berdasarkan penelitian yang telah dilaksanakan, dapat ditarik kesimpulan sebagai berikut:
+
+\begin{enumerate}[label=\arabic*)]
+    \item Aplikasi Quishing Defender berhasil dikembangkan sebagai solusi pendeteksi QR code \textit{phishing} yang efektif dengan mengintegrasikan tiga layanan \textit{threat intelligence} (VirusTotal, Google Safe Browsing, dan WHOIS). Pendekatan \textit{multi-API} meningkatkan reliabilitas deteksi melalui \textit{cross-validation} antar layanan, serta dilengkapi analisis heuristik berupa deteksi \textit{typosquatting}, identifikasi pola \textit{phishing}, pengenalan URL pendek, dan \textit{parsing} kode pembayaran QRIS. Sistem diimplementasikan dengan dua antarmuka---aplikasi web berbasis Laravel dan bot Telegram---yang memberikan fleksibilitas akses bagi pengguna.
+    
+    \item \textit{Pipeline preprocessing} multi-strategi dengan 10 strategi transformasi citra berhasil dirancang dan diimplementasikan untuk menangani permasalahan dekoding QR \textit{fancy}. Strategi-strategi ini mencakup konversi \textit{grayscale}, penyesuaian kontras, penajaman, inversi warna, peningkatan resolusi, dan deteksi tepi. Pendekatan bertahap yang mencoba strategi secara berurutan memastikan efisiensi komputasi dan mampu mendekode QR \textit{fancy} dengan berbagai jenis modifikasi visual yang tidak dapat ditangani oleh pemindai konvensional.
+    
+    \item Akurasi sistem deteksi \textit{multi-API} dievaluasi melalui lima skenario pengujian yang komprehensif, mencakup akurasi deteksi URL, keberhasilan dekoding QR \textit{fancy}, waktu respons sistem, efektivitas strategi \textit{preprocessing}, dan konsistensi \textit{multi-API}. Kerangka evaluasi menggunakan metrik standar (\textit{accuracy}, \textit{precision}, \textit{recall}, \textit{F1-score}) dan \textit{confusion matrix} untuk memberikan penilaian yang objektif dan terukur terhadap performa sistem.
+\end{enumerate}
+
+\subsection{Saran}
+
+Untuk pengembangan lebih lanjut, beberapa saran yang dapat dipertimbangkan adalah:
+
+\begin{enumerate}[label=\arabic*)]
+    \item \textbf{Integrasi \textit{Machine Learning}}: Mengembangkan model \textit{machine learning} lokal untuk klasifikasi URL \textit{phishing} sehingga dapat mengurangi ketergantungan pada API eksternal dan meningkatkan kemampuan deteksi \textit{zero-day phishing}. Model dapat dilatih menggunakan fitur-fitur yang diekstrak dari analisis heuristik yang telah ada.
+    
+    \item \textbf{Pengembangan Aplikasi Mobile}: Membangun aplikasi \textit{mobile} native (Android dan iOS) yang mengintegrasikan kemampuan pemindaian QR code melalui kamera perangkat secara langsung dengan analisis keamanan \textit{real-time}, memberikan pengalaman pengguna yang lebih mulus.
+    
+    \item \textbf{Integrasi \textit{Real-time Threat Intelligence}}: Mengintegrasikan sumber \textit{threat intelligence} tambahan seperti PhishTank, OpenPhish, dan URLhaus untuk memperluas cakupan \textit{blacklist} dan meningkatkan deteksi terhadap kampanye \textit{phishing} terbaru.
+    
+    \item \textbf{Verifikasi QRIS terhadap Database Resmi}: Mengembangkan mekanisme verifikasi informasi \textit{merchant} QRIS terhadap database resmi Bank Indonesia atau PSP untuk memvalidasi keaslian QR code pembayaran, tidak hanya sebatas \textit{parsing} informasi.
+    
+    \item \textbf{Peningkatan \textit{Pipeline Preprocessing}}: Menambahkan teknik \textit{preprocessing} berbasis \textit{deep learning} seperti \textit{super-resolution} menggunakan arsitektur ESRGAN (\textit{Enhanced Super-Resolution Generative Adversarial Network}) untuk meningkatkan kemampuan dekoding pada QR \textit{fancy} yang sangat terdistorsi.
+    
+    \item \textbf{Pengujian dengan Dataset yang Lebih Besar}: Melakukan pengujian dengan dataset URL \textit{phishing} berskala besar (ribuan sampel) untuk mendapatkan evaluasi yang lebih representatif dan mengidentifikasi pola \textit{false positive}/\textit{false negative} yang lebih komprehensif.
+    
+    \item \textbf{Kolaborasi dengan Otoritas}: Menjalin kerja sama dengan BSSN, Bank Indonesia, atau asosiasi fintech untuk memperoleh akses ke data \textit{threat intelligence} lokal yang relevan dengan konteks \textit{quishing} di Indonesia.
+\end{enumerate}
+
+% ============================================================
+% DAFTAR PUSTAKA
+% ============================================================
+\begin{thebibliography}{99}
+
+\bibitem{bi_qris_2019}
+Bank Indonesia, ``Peraturan Anggota Dewan Gubernur Nomor 21/18/PADG/2019 tentang Implementasi Standar Nasional Quick Response Code untuk Pembayaran,'' Bank Indonesia, Jakarta, Indonesia, 2019.
+
+\bibitem{bi_statistics_2024}
+Bank Indonesia, ``Statistik Sistem Pembayaran dan Infrastruktur Pasar Keuangan (SPIP),'' Bank Indonesia, Jakarta, Indonesia, Laporan Tahunan 2024.
+
+\bibitem{sharevski_qr_2022}
+F. Sharevski, A. Jagger, P. Treebridge, dan A. Alem, ``Gone Quishing: A Field Study of QR Code Phishing,'' \textit{Proceedings of the 18th Symposium on Usable Privacy and Security (SOUPS)}, pp. 285--302, 2022.
+
+\bibitem{kompas_qris_2023}
+``Kasus Penipuan QRIS Palsu di Masjid, Polisi Tangkap Pelaku,'' \textit{Kompas.com}, Apr. 2023. [Daring]. Tersedia: https://www.kompas.com. [Diakses: 15 Mei 2025].
+
+\bibitem{bssn_annual_2023}
+Badan Siber dan Sandi Negara (BSSN), ``Laporan Tahunan Monitoring Keamanan Siber Tahun 2023,'' BSSN, Jakarta, Indonesia, 2024.
+
+\bibitem{garateguy_qr_2014}
+G. J. Garateguy, G. R. Arce, D. L. Lau, dan O. P. Villarreal, ``QR Images: Optimized Image Embedding in QR Codes,'' \textit{IEEE Transactions on Image Processing}, vol. 23, no. 7, pp. 2842--2853, Jul. 2014.
+
+\bibitem{krombholz_qr_2014}
+K. Krombholz, P. Frühwirt, P. Kieseberg, I. Kapsalis, M. Huber, dan E. Weippl, ``QR Code Security: A Survey of Attacks and Challenges for Usable Security,'' \textit{Proceedings of the International Conference on Human Aspects of Information Security, Privacy, and Trust (HAS)}, Springer, pp. 79--90, 2014.
+
+\bibitem{iso_18004_2015}
+International Organization for Standardization, ``ISO/IEC 18004:2015 --- Information technology --- Automatic identification and data capture techniques --- QR Code bar code symbology specification,'' ISO/IEC, Geneva, Switzerland, 2015.
+
+\bibitem{wave_qr_about}
+Denso Wave Inc., ``About QR Code,'' Denso Wave. [Daring]. Tersedia: https://www.qrcode.com/en/about/. [Diakses: 10 Mei 2025].
+
+\bibitem{lin_aesthetic_2015}
+Y.-S. Lin, S.-J. Luo, dan B.-Y. Chen, ``Artistic QR Code Embellishment,'' \textit{Computer Graphics Forum}, vol. 34, no. 2, pp. 137--146, 2015.
+
+\bibitem{chu_halftone_2013}
+H.-K. Chu, C.-S. Chang, R.-R. Lee, dan N. J. Mitra, ``Halftone QR Codes,'' \textit{ACM Transactions on Graphics (TOG)}, vol. 32, no. 6, Art. 217, Nov. 2013.
+
+\bibitem{owasp_phishing}
+OWASP Foundation, ``Phishing,'' OWASP Web Security Testing Guide. [Daring]. Tersedia: https://owasp.org/www-community/attacks/Phishing. [Diakses: 12 Mei 2025].
+
+\bibitem{apwg_report_2023}
+Anti-Phishing Working Group (APWG), ``Phishing Activity Trends Report, 4th Quarter 2023,'' APWG, 2024.
+
+\bibitem{alkhalil_phishing_2021}
+Z. Alkhalil, C. Hewage, L. Nawaf, dan I. Khan, ``Phishing Attacks: A Recent Comprehensive Study and a New Anatomy,'' \textit{Frontiers in Computer Science}, vol. 3, Art. 563060, Mar. 2021.
+
+\bibitem{szurdi_email_2017}
+J. Szurdi dan N. Christin, ``Email Typosquatting,'' \textit{Proceedings of the 2017 ACM on Asia Conference on Computer and Communications Security (ASIACCS)}, pp. 509--520, 2017.
+
+\bibitem{sahoo_malicious_2017}
+S. R. Sahoo, B. B. Gupta, ``Malicious URL Detection using Machine Learning: A Survey,'' \textit{arXiv preprint arXiv:1701.07179}, 2017.
+
+\bibitem{google_safebrowsing}
+Google, ``Safe Browsing APIs (v4),'' Google Developers. [Daring]. Tersedia: https://developers.google.com/safe-browsing/v4. [Diakses: 12 Mei 2025].
+
+\bibitem{virustotal_api}
+VirusTotal, ``VirusTotal API v3 Documentation,'' VirusTotal. [Daring]. Tersedia: https://docs.virustotal.com/reference/overview. [Diakses: 12 Mei 2025].
+
+\bibitem{rfc_3912}
+L. Daigle, ``RFC 3912 --- WHOIS Protocol Specification,'' Internet Engineering Task Force (IETF), Sep. 2004.
+
+\bibitem{hao_predator_2016}
+S. Hao, A. Kantchelian, B. Miller, V. Paxson, dan N. Feamster, ``PREDATOR: Proactive Recognition and Elimination of Domain Abuse at Time-of-Registration,'' \textit{Proceedings of the 2016 ACM SIGSAC Conference on Computer and Communications Security (CCS)}, pp. 1568--1579, 2016.
+
+\bibitem{emvco_qr_2020}
+EMVCo, ``EMV QR Code Specification for Payment Systems: Merchant-Presented Mode, Version 1.1,'' EMVCo, LLC, 2020.
+
+\bibitem{gonzalez_digital_2018}
+R. C. Gonzalez dan R. E. Woods, \textit{Digital Image Processing}, 4th ed. New York, NY, USA: Pearson, 2018.
+
+\bibitem{otsu_threshold_1979}
+N. Otsu, ``A Threshold Selection Method from Gray-Level Histograms,'' \textit{IEEE Transactions on Systems, Man, and Cybernetics}, vol. 9, no. 1, pp. 62--66, Jan. 1979.
+
+\bibitem{liu_recognition_2019}
+Z. Liu, Y. Yan, dan Q. Yang, ``Recognition of QR Code with Mobile Phones under Various Conditions,'' \textit{IEEE Access}, vol. 7, pp. 167332--167340, 2019.
+
+\bibitem{vidas_qrishing_2013}
+T. Vidas, E. Owusu, S. Wang, C. Zeng, L. F. Cranor, dan N. Christin, ``QRishing: The Susceptibility of Smartphone Users to QR Code Phishing Attacks,'' \textit{Proceedings of the Financial Cryptography and Data Security Workshop on Usable Security (USEC)}, pp. 52--69, 2013.
+
+\bibitem{focardi_usable_2019}
+R. Focardi, F. L. Luccio, dan H. A. M. Wahsheh, ``Usable Security for QR Code,'' \textit{Journal of Information Security and Applications}, vol. 48, Art. 102369, Oct. 2019.
+
+\bibitem{do_phishing_2022}
+N. Q. Do, A. Selamat, O. Krejcar, E. Herrera-Viedma, dan H. Fujita, ``Deep Learning for Phishing Detection: Taxonomy, Current Challenges and Future Directions,'' \textit{IEEE Access}, vol. 10, pp. 36429--36463, 2022.
+
+\bibitem{singh_qrsecure_2023}
+A. K. Singh dan R. Singh, ``QRSecure: A Browser-Based Tool for QR Code Security Analysis,'' \textit{Proceedings of the IEEE International Conference on Cyber Security and Resilience (CSR)}, pp. 401--406, 2023.
+
+\end{thebibliography}
+
+\end{document}

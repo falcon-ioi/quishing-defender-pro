@@ -4,34 +4,43 @@ vendor/
 
 # Environment files
 .env
-.env.backup
-.env.production
+.env.local
+.env.*.local
+telegram_bot/.env
+quishing-laravel/.env
 
 # IDE
 .idea/
 .vscode/
-.fleet/
-.nova/
-.zed/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Laravel
-*.log
-/quishing-laravel/public/build
-/quishing-laravel/public/hot
-/quishing-laravel/public/storage
-/quishing-laravel/storage/*.key
-/quishing-laravel/storage/pail
-/quishing-laravel/.phpunit.cache
-/quishing-laravel/.phpunit.result.cache
-/quishing-laravel/auth.json
+quishing-laravel/storage/logs/*.log
+quishing-laravel/storage/framework/cache/*
+quishing-laravel/storage/framework/sessions/*
+quishing-laravel/storage/framework/views/*
+quishing-laravel/bootstrap/cache/*
 
-# Database
-*.sqlite
-*.sqlite-journal
+# Compiled
+*.pyc
+__pycache__/
 
-# Legacy
-/_legacy/node_modules/
+# LaTeX auxiliary files
+Paper/*.aux
+Paper/*.log
+Paper/*.out
+Paper/*.toc
+Paper/*.bbl
+Paper/*.blg
+Paper/*.synctex.gz
+Paper/*.fdb_latexmk
+Paper/*.fls
+Paper/*.nav
+Paper/*.snm
+Paper/*.vrb

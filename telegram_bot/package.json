@@ -1,7 +1,7 @@
 {
     "name": "quishing-defender-bot",
-    "version": "1.0.0",
-    "description": "Telegram Bot for Quishing Defender - QR Phishing Detection",
+    "version": "2.0.0",
+    "description": "Telegram Bot for Quishing Defender - QR Phishing Detection with Fancy QR Support",
     "main": "bot.js",
     "scripts": {
         "start": "node bot.js"
@@ -10,7 +10,8 @@
         "telegraf": "^4.16.3",
         "axios": "^1.7.2",
         "jsqr": "^1.4.0",
-        "jimp": "^0.22.12",
+        "sharp": "^0.33.2",
+        "form-data": "^4.0.0",
         "dotenv": "^16.4.5"
     }
 }
